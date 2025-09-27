@@ -21,7 +21,6 @@ const STATUS_MOTIVARI = {
 // Statusuri cereri învoire scurtă (formular)
 const STATUS_CERERI = {
   CERERE_TRIMISA: 'cerere_trimisa',
-  APROBATA_PARINTE: 'aprobata_parinte',
   ACCEPTATA_DIRIGINTE: 'acceptata_diriginte',
   RESPINSA: 'respinsa',
   FINALIZATA: 'finalizata',

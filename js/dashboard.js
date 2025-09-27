@@ -219,8 +219,7 @@ class Dashboard {
     const totalMotivari = this.motivari.length + this.cereri.length;
     const inAsteptare =
       this.motivari.filter((m) => m.status === 'in_asteptare').length +
-      this.cereri.filter((c) => c.status === 'cerere_trimisa' || c.status === 'aprobata_parinte')
-        .length;
+      this.cereri.filter((c) => c.status === 'cerere_trimisa').length;
     // Calculează orele de absență motivată
     const absenteMotivate =
       this.motivari
@@ -321,31 +320,19 @@ class Dashboard {
 
     // Actualizează textul informativ în funcție de rol și ore disponibile
     const infoText = document.getElementById('cerere-info-text');
-
     if (tip === 'personal') {
-      const baseText =
-        this.currentUser.role === 'parinte'
-          ? 'Cererea va fi trimisă direct dirigintelui.'
-          : 'Cererea va fi trimisă părintelui pentru aprobare.';
+      infoText.textContent = `Cererea va fi trimisă dirigintelui. Orele se vor scădea din cele 42 permise anual. Mai aveți ${oreRamase} ore personale disponibile.`;
 
-      infoText.textContent = `${baseText} Orele se vor scădea din totalul orelor permise de regulament pentru învoirea la cerere a elevului într-un an școlar. În acest moment mai aveți ${oreRamase} ore de învoire disponibile.`;
-
-      // Adaugă styling pentru avertisment dacă sunt puține ore
       if (oreRamase <= 5) {
-        infoText.style.color = '#ef4444'; // roșu pentru avertisment
+        infoText.style.color = '#ef4444';
       } else {
-        infoText.style.color = '#1e40af'; // albastru normal
+        infoText.style.color = '#1e40af';
       }
     } else {
-      const baseText =
-        this.currentUser.role === 'parinte'
-          ? 'Cererea va fi trimisă direct dirigintelui.'
-          : 'Cererea va fi trimisă părintelui pentru aprobare.';
-
-      infoText.textContent = `${baseText} Orele NU se vor scădea cele 42 ore de învoire/an.`;
+      infoText.textContent =
+        'Cererea va fi trimisă dirigintelui. Orele NU se vor scădea cele 42 ore de învoire/an.';
       infoText.style.color = '#1e40af';
     }
-
     // Scroll la formular
     form.scrollIntoView({ behavior: 'smooth' });
   }
@@ -454,7 +441,6 @@ class Dashboard {
         ore_solicitate: oreSolicitate,
         motiv: cerereData.motiv,
         trimis_de: this.currentUser.role,
-        aproba_parinte_digital: this.currentUser.role === 'parinte',
       };
 
       // Trimite prin Netlify Function
@@ -785,7 +771,6 @@ class Dashboard {
   createCerereCard(cerere) {
     const statusColors = {
       cerere_trimisa: '#D97706',
-      aprobata_parinte: '#0891b2',
       acceptata_diriginte: '#059669',
       respinsa: '#EF4444',
       finalizata: '#2563EB',
@@ -793,7 +778,6 @@ class Dashboard {
 
     const statusTexts = {
       cerere_trimisa: 'Trimisă',
-      aprobata_parinte: 'Aprobată de părinte',
       acceptata_diriginte: 'Acceptată',
       respinsa: 'Respinsă',
       finalizata: 'Finalizată',
@@ -873,7 +857,7 @@ class Dashboard {
         if (item.type === 'cerere') {
           switch (this.currentFilter) {
             case 'in_asteptare':
-              return item.status === 'cerere_trimisa' || item.status === 'aprobata_parinte';
+              return item.status === 'cerere_trimisa';
             case 'aprobata':
               return item.status === 'acceptata_diriginte';
             case 'finalizata':
@@ -1028,7 +1012,6 @@ class Dashboard {
       respinsa: 'Respinsă',
       finalizata: 'Motivată',
       cerere_trimisa: 'Trimisă',
-      aprobata_parinte: 'Aprobată de părinte',
       acceptata_diriginte: 'Acceptată',
     };
     return statusTexts[status] || status;

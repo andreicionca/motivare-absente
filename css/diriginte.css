@@ -363,8 +363,7 @@ body {
 }
 
 .solicitare-card.pending,
-.solicitare-card.cerere_trimisa,
-.solicitare-card.aprobata_parinte {
+.solicitare-card.cerere_trimisa {
   border-left-color: #d97706;
 }
 

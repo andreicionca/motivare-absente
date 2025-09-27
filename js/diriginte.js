@@ -168,10 +168,7 @@ class Diriginte {
     ];
 
     const pending = allItems.filter(
-      (item) =>
-        item.status === 'in_asteptare' ||
-        item.status === 'cerere_trimisa' ||
-        item.status === 'aprobata_parinte'
+      (item) => item.status === 'in_asteptare' || item.status === 'cerere_trimisa'
     ).length;
 
     const approved = allItems.filter(
@@ -198,10 +195,7 @@ class Diriginte {
     ];
 
     const pending = allItems.filter(
-      (item) =>
-        item.status === 'in_asteptare' ||
-        item.status === 'cerere_trimisa' ||
-        item.status === 'aprobata_parinte'
+      (item) => item.status === 'in_asteptare' || item.status === 'cerere_trimisa'
     ).length;
 
     const navBadge = document.getElementById('nav-pending-badge');
@@ -221,10 +215,7 @@ class Diriginte {
     ];
 
     const pendingItems = allItems.filter(
-      (item) =>
-        item.status === 'in_asteptare' ||
-        item.status === 'cerere_trimisa' ||
-        item.status === 'aprobata_parinte'
+      (item) => item.status === 'in_asteptare' || item.status === 'cerere_trimisa'
     );
 
     // Sortează după data creării
@@ -324,11 +315,7 @@ class Diriginte {
     if (this.currentFilter !== 'toate') {
       filteredItems = filteredItems.filter((item) => {
         if (this.currentFilter === 'in_asteptare') {
-          return (
-            item.status === 'in_asteptare' ||
-            item.status === 'cerere_trimisa' ||
-            item.status === 'aprobata_parinte'
-          );
+          return item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
         }
         if (this.currentFilter === 'aprobata') {
           return item.status === 'aprobata' || item.status === 'acceptata_diriginte';
@@ -377,7 +364,6 @@ class Diriginte {
     const statusColors = {
       in_asteptare: '#D97706',
       cerere_trimisa: '#D97706',
-      aprobata_parinte: '#0891b2',
       aprobata: '#059669',
       acceptata_diriginte: '#059669',
       respinsa: '#EF4444',
@@ -387,7 +373,6 @@ class Diriginte {
     const statusTexts = {
       in_asteptare: 'În așteptare',
       cerere_trimisa: 'Cerere trimisă',
-      aprobata_parinte: 'Aprobată de părinte',
       aprobata: 'Aprobată',
       acceptata_diriginte: 'Acceptată',
       respinsa: 'Respinsă',
@@ -405,10 +390,7 @@ class Diriginte {
     };
 
     // Determină dacă poate fi procesat
-    const canProcess =
-      item.status === 'in_asteptare' ||
-      item.status === 'cerere_trimisa' ||
-      item.status === 'aprobata_parinte';
+    const canProcess = item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
 
     // Determină dacă poate fi selectat pentru finalizare
     const canSelect = item.status === 'aprobata' || item.status === 'acceptata_diriginte';
@@ -651,10 +633,7 @@ class Diriginte {
 
     // Afișează/ascunde butoanele în funcție de status
     const modalActions = document.getElementById('modal-actions');
-    const canProcess =
-      item.status === 'in_asteptare' ||
-      item.status === 'cerere_trimisa' ||
-      item.status === 'aprobata_parinte';
+    const canProcess = item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
 
     if (canProcess) {
       modalActions.style.display = 'flex';
