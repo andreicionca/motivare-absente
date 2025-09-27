@@ -11,12 +11,9 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { clasa } = JSON.parse(event.body);
+    const { clasa, action } = JSON.parse(event.body);
 
-    // Încarcă toate motivările pentru clasa dirigintelui
-    // În get-diriginte-motivari.js, înlocuiește query-ul:
-
-    // Primul query - obține elevii din clasa dirigintelui
+    // Obține elevii din clasa dirigintelui
     const { data: elevi, error: eleviError } = await supabase
       .from('elevi')
       .select('id, nume, prenume')
@@ -31,38 +28,88 @@ exports.handler = async (event, context) => {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
-          data: [],
+          data: action === 'get-all-data' ? { motivari: [], cereri: [] } : [],
         }),
       };
     }
 
-    // Al doilea query - obține motivările pentru acești elevi
-    const { data: motivari, error: motivariError } = await supabase
-      .from('motivari')
-      .select('*')
-      .in('elev_id', eleviIds)
-      .order('created_at', { ascending: false });
+    if (action === 'get-all-data') {
+      // Încarcă atât motivări cât și cereri
+      const [motivariResult, cereriResult] = await Promise.all([
+        supabase
+          .from('motivari')
+          .select('*')
+          .in('elev_id', eleviIds)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('cereri_invoire_scurta')
+          .select('*')
+          .in('elev_id', eleviIds)
+          .order('created_at', { ascending: false }),
+      ]);
 
-    if (motivariError) throw motivariError;
+      if (motivariResult.error) throw motivariResult.error;
+      if (cereriResult.error) throw cereriResult.error;
 
-    // Combină datele
-    const formattedData = motivari.map((motivare) => {
-      const elev = elevi.find((e) => e.id === motivare.elev_id);
+      // Combină datele cu informațiile elevilor
+      const formattedMotivari = motivariResult.data.map((motivare) => {
+        const elev = elevi.find((e) => e.id === motivare.elev_id);
+        return {
+          ...motivare,
+          elev_nume: elev.nume,
+          elev_prenume: elev.prenume,
+        };
+      });
+
+      const formattedCereri = cereriResult.data.map((cerere) => {
+        const elev = elevi.find((e) => e.id === cerere.elev_id);
+        return {
+          ...cerere,
+          elev_nume: elev.nume,
+          elev_prenume: elev.prenume,
+        };
+      });
+
       return {
-        ...motivare,
-        elev_nume: elev.nume,
-        elev_prenume: elev.prenume,
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          data: {
+            motivari: formattedMotivari,
+            cereri: formattedCereri,
+          },
+        }),
       };
-    });
+    } else {
+      // Compatibilitate cu versiunea veche - doar motivări
+      const { data: motivari, error: motivariError } = await supabase
+        .from('motivari')
+        .select('*')
+        .in('elev_id', eleviIds)
+        .order('created_at', { ascending: false });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        data: formattedData,
-      }),
-    };
+      if (motivariError) throw motivariError;
+
+      // Combină datele
+      const formattedData = motivari.map((motivare) => {
+        const elev = elevi.find((e) => e.id === motivare.elev_id);
+        return {
+          ...motivare,
+          elev_nume: elev.nume,
+          elev_prenume: elev.prenume,
+        };
+      });
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          data: formattedData,
+        }),
+      };
+    }
   } catch (error) {
+    console.error('Eroare get-diriginte-motivari:', error);
     return {
       statusCode: 400,
       body: JSON.stringify({

@@ -11,20 +11,20 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { motivariIds } = JSON.parse(event.body);
+    const { cerereId, status } = JSON.parse(event.body);
 
-    if (!Array.isArray(motivariIds) || motivariIds.length === 0) {
-      throw new Error('Lista de motivări este invalidă');
+    const updateData = {
+      status: status,
+    };
+
+    if (status === 'acceptata_diriginte') {
+      updateData.acceptata_diriginte_la = new Date().toISOString();
     }
 
-    // Actualizează statusul tuturor motivărilor selectate
     const { error } = await supabase
-      .from('motivari')
-      .update({
-        status: 'finalizata',
-        procesat_la: new Date().toISOString(),
-      })
-      .in('id', motivariIds);
+      .from('cereri_invoire_scurta')
+      .update(updateData)
+      .eq('id', cerereId);
 
     if (error) throw error;
 
@@ -32,11 +32,11 @@ exports.handler = async (event, context) => {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        message: `${motivariIds.length} motivări au fost finalizate cu succes`,
+        message: 'Status cerere actualizat cu succes',
       }),
     };
   } catch (error) {
-    console.error('Eroare finalizare motivări:', error);
+    console.error('Eroare actualizare status cerere:', error);
     return {
       statusCode: 400,
       body: JSON.stringify({

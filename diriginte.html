@@ -21,6 +21,9 @@
       <button class="logout-btn" onclick="auth.logout()">Ieșire</button>
     </header>
 
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
     <!-- Main Content -->
     <main class="main-content">
       <!-- Pagina 1: Dashboard -->
@@ -71,34 +74,34 @@
           <div class="action-buttons">
             <button class="action-btn" onclick="diriginte.switchPage('pending')">
               <span class="btn-icon">⏳</span>
-              <span>Procesează motivări</span>
+              <span>Procesează solicitări</span>
               <span class="badge" id="pending-badge">0</span>
             </button>
 
             <button class="action-btn" onclick="diriginte.switchPage('approved')">
               <span class="btn-icon">📤</span>
-              <span>Export motivări</span>
+              <span>Finalizează aprobate</span>
             </button>
           </div>
         </div>
       </section>
 
-      <!-- Pagina 2: Motivări în așteptare -->
+      <!-- Pagina 2: În așteptare -->
       <section class="page-content" id="page-pending">
         <div class="page-header">
           <h2>⏳ În Așteptare</h2>
           <span class="count-badge" id="pending-count">0</span>
         </div>
 
-        <div class="motivari-feed" id="pending-feed">
+        <div class="solicitari-feed" id="pending-feed">
           <div class="empty-state" id="pending-empty">
             <div class="empty-icon">✅</div>
-            <p>Nu sunt motivări în așteptare</p>
+            <p>Nu sunt solicitări în așteptare</p>
           </div>
         </div>
       </section>
 
-      <!-- Pagina 3: Motivări aprobate -->
+      <!-- Pagina 3: Aprobate -->
       <section class="page-content" id="page-approved">
         <div class="page-header">
           <h2>✅ Aprobate</h2>
@@ -123,22 +126,37 @@
           </label>
         </div>
 
-        <div class="motivari-feed" id="approved-feed">
+        <div class="solicitari-feed" id="approved-feed">
           <div class="empty-state" id="approved-empty">
             <div class="empty-icon">📄</div>
-            <p>Nu sunt motivări aprobate</p>
+            <p>Nu sunt solicitări aprobate</p>
           </div>
         </div>
       </section>
 
-      <!-- Pagina 4: Toate motivările -->
-      <section class="page-content" id="page-all">
+      <!-- Pagina 4: Respinse -->
+      <section class="page-content" id="page-rejected">
         <div class="page-header">
-          <h2>📄 Toate Motivările</h2>
-          <button class="refresh-btn" onclick="diriginte.loadAllMotivari()">🔄</button>
+          <h2>❌ Respinse</h2>
+          <button class="refresh-btn" onclick="diriginte.loadRejectedSolicitari()">🔄</button>
         </div>
 
-        <!-- Filtre -->
+        <div class="solicitari-feed" id="rejected-feed">
+          <div class="empty-state" id="rejected-empty">
+            <div class="empty-icon">❌</div>
+            <p>Nu sunt solicitări respinse</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pagina 5: Toate -->
+      <section class="page-content" id="page-all">
+        <div class="page-header">
+          <h2>📄 Toate Solicitările</h2>
+          <button class="refresh-btn" onclick="diriginte.loadAllSolicitari()">🔄</button>
+        </div>
+
+        <!-- Filtre Status -->
         <div class="filters">
           <button class="filter-btn active" data-filter="toate">Toate</button>
           <button class="filter-btn" data-filter="in_asteptare">În așteptare</button>
@@ -147,10 +165,25 @@
           <button class="filter-btn" data-filter="respinsa">Respinse</button>
         </div>
 
-        <div class="motivari-feed" id="all-feed">
+        <!-- Filtre Tipuri -->
+        <div class="type-filters">
+          <h4>Filtrează după tip:</h4>
+          <div class="type-filter-buttons">
+            <button class="type-filter-btn active" data-type="toate">Toate</button>
+            <button class="type-filter-btn" data-type="motivari">Motivări</button>
+            <button class="type-filter-btn" data-type="cereri">Cereri</button>
+            <button class="type-filter-btn" data-type="medicala_clasica">Medicale</button>
+            <button class="type-filter-btn" data-type="invoire_lunga">Invoiri Lungi</button>
+            <button class="type-filter-btn" data-type="alte_motive">Alte Motive</button>
+            <button class="type-filter-btn" data-type="personal">Personal</button>
+            <button class="type-filter-btn" data-type="medical_urgent">Urgențe Medicale</button>
+          </div>
+        </div>
+
+        <div class="solicitari-feed" id="all-feed">
           <div class="empty-state" id="all-empty">
             <div class="empty-icon">📝</div>
-            <p>Nu sunt motivări</p>
+            <p>Nu sunt solicitări</p>
           </div>
         </div>
       </section>
@@ -174,17 +207,22 @@
         <span class="nav-label">Aprobate</span>
       </button>
 
+      <button class="nav-item" data-page="rejected">
+        <span class="nav-icon">❌</span>
+        <span class="nav-label">Respinse</span>
+      </button>
+
       <button class="nav-item" data-page="all">
         <span class="nav-icon">📄</span>
         <span class="nav-label">Toate</span>
       </button>
     </nav>
 
-    <!-- Modal pentru vizualizare motivare -->
-    <div class="modal-overlay" id="motivare-modal" style="display: none">
+    <!-- Modal pentru vizualizare solicitare -->
+    <div class="modal-overlay" id="solicitare-modal" style="display: none">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Detalii Motivare</h3>
+          <h3 id="modal-title">Detalii Solicitare</h3>
           <button class="close-btn" onclick="diriginte.closeModal()">×</button>
         </div>
 
@@ -192,11 +230,11 @@
           <!-- Conținut dinamic -->
         </div>
 
-        <div class="modal-actions">
-          <button class="btn btn-danger" id="reject-btn" onclick="diriginte.rejectMotivare()">
+        <div class="modal-actions" id="modal-actions">
+          <button class="btn btn-danger" id="reject-btn" onclick="diriginte.rejectSolicitare()">
             Respinge
           </button>
-          <button class="btn btn-success" id="approve-btn" onclick="diriginte.approveMotivare()">
+          <button class="btn btn-success" id="approve-btn" onclick="diriginte.approveSolicitare()">
             Aprobă
           </button>
         </div>

@@ -73,6 +73,50 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  right: 1rem;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #2563eb;
+  max-width: 300px;
+  animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+  border-left-color: #059669;
+}
+
+.toast.error {
+  border-left-color: #ef4444;
+}
+
+.toast.warning {
+  border-left-color: #d97706;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Main Content */
 .main-content {
   padding: 1rem;
@@ -127,6 +171,7 @@ body {
 .page-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .refresh-btn,
@@ -294,14 +339,14 @@ body {
   accent-color: #2563eb;
 }
 
-/* Motivari Feed */
-.motivari-feed {
+/* Solicitari Feed */
+.solicitari-feed {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.motivare-card {
+.solicitare-card {
   background: white;
   border-radius: 12px;
   padding: 1.25rem;
@@ -312,40 +357,54 @@ body {
   position: relative;
 }
 
-.motivare-card:hover {
+.solicitare-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.motivare-card.pending {
+.solicitare-card.pending,
+.solicitare-card.cerere_trimisa,
+.solicitare-card.aprobata_parinte {
   border-left-color: #d97706;
 }
-.motivare-card.approved {
+
+.solicitare-card.approved,
+.solicitare-card.acceptata_diriginte {
   border-left-color: #059669;
 }
-.motivare-card.rejected {
+
+.solicitare-card.rejected,
+.solicitare-card.respinsa {
   border-left-color: #ef4444;
 }
-.motivare-card.finalized {
+
+.solicitare-card.finalized,
+.solicitare-card.finalizata {
   border-left-color: #2563eb;
 }
 
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 1rem;
+}
+
+.student-info {
+  flex-grow: 1;
 }
 
 .student-name {
   font-weight: 600;
   font-size: 1.1rem;
   color: #1f2937;
+  margin-bottom: 0.25rem;
 }
 
-.motivare-tip {
+.solicitare-tip {
   font-size: 0.8rem;
   color: #6b7280;
+  font-weight: 500;
 }
 
 .status-badge {
@@ -354,6 +413,7 @@ body {
   font-size: 0.7rem;
   font-weight: 600;
   color: white;
+  white-space: nowrap;
 }
 
 .card-content {
@@ -365,12 +425,30 @@ body {
 .ore-info {
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .perioada strong,
 .motiv strong,
 .ore-info strong {
   color: #374151;
+}
+
+/* Card Image Container pentru motivări */
+.card-image-container {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.card-image-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 300px;
+  object-fit: contain;
+  background: #f8fafc;
 }
 
 .card-footer {
@@ -381,20 +459,24 @@ body {
   color: #6b7280;
   border-top: 1px solid #f3f4f6;
   padding-top: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .card-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .card-btn {
-  padding: 0.25rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
   border: none;
   transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .approve-btn {
@@ -414,10 +496,11 @@ body {
 
 .card-btn:hover {
   opacity: 0.8;
+  transform: translateY(-1px);
 }
 
 /* Checkbox pentru selectare */
-.motivare-checkbox {
+.solicitare-checkbox {
   position: absolute;
   top: 1rem;
   right: 1rem;
@@ -454,6 +537,46 @@ body {
 
 .filter-btn:hover:not(.active) {
   background: #e5e7eb;
+}
+
+/* Type Filters */
+.type-filters {
+  margin-bottom: 1.5rem;
+}
+
+.type-filters h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+.type-filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.type-filter-btn {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  padding: 0.375rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.type-filter-btn.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.type-filter-btn:hover:not(.active) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 /* Bottom Navigation */
@@ -568,6 +691,22 @@ body {
 
 .modal-body {
   padding: 1.5rem;
+}
+
+.modal-image-container {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.modal-image-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 400px;
+  object-fit: contain;
+  background: #f8fafc;
 }
 
 .modal-actions {
@@ -707,5 +846,33 @@ body {
 
   .modal-content {
     max-width: 600px;
+  }
+
+  .card-image-container img {
+    max-height: 400px;
+  }
+
+  .type-filter-buttons {
+    gap: 0.75rem;
+  }
+
+  .type-filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Responsive pentru desktop */
+@media (min-width: 1024px) {
+  .main-content {
+    max-width: 1000px;
+  }
+
+  .modal-content {
+    max-width: 700px;
+  }
+
+  .card-image-container img {
+    max-height: 500px;
   }
 }
