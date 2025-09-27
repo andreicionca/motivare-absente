@@ -400,8 +400,8 @@ class Diriginte {
       invoire_lunga: '📅 Învoire Lungă',
       alte_motive: '📋 Alte Motive',
       // Pentru cereri
-      personal: '👤 Învoire Personal',
-      medical_urgent: '🚨 Urgență Medicală',
+      personal: '👤 Învoire personală',
+      invoire_justificata: '📋 Învoire justificată',
     };
 
     // Determină dacă poate fi procesat
@@ -575,7 +575,7 @@ class Diriginte {
       invoire_lunga: '📅 Învoire Lungă',
       alte_motive: '📋 Alte Motive',
       personal: '👤 Învoire Personal',
-      medical_urgent: '🚨 Urgență Medicală',
+      invoire_justificata: '🚨 Urgență Medicală',
     };
 
     const tipKey = item.type === 'motivare' ? item.tip_motivare : item.tip_cerere;
@@ -885,7 +885,7 @@ class Diriginte {
   getTipTextCerere(tip) {
     const tipTexts = {
       personal: 'Învoire Personal',
-      medical_urgent: 'Urgență Medicală',
+      invoire_justificata: 'Urgență Medicală',
     };
     return tipTexts[tip] || tip;
   }

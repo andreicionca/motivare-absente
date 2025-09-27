@@ -328,7 +328,7 @@ class Dashboard {
           ? 'Cererea va fi trimisă direct dirigintelui.'
           : 'Cererea va fi trimisă părintelui pentru aprobare.';
 
-      infoText.textContent = `${baseText} Orele se vor scădea din cele 42 permise. Ore rămase: ${oreRamase}`;
+      infoText.textContent = `${baseText} Orele se vor scădea din cele totalul orelor permise de regulament pentru învoirea la cerere a elevului. Mai aveți ${oreRamase} ore personale disponibile.`;
 
       // Adaugă styling pentru avertisment dacă sunt puține ore
       if (oreRamase <= 5) {
@@ -342,7 +342,7 @@ class Dashboard {
           ? 'Cererea va fi trimisă direct dirigintelui.'
           : 'Cererea va fi trimisă părintelui pentru aprobare.';
 
-      infoText.textContent = `${baseText} Orele NU se vor scădea (urgență medicală).`;
+      infoText.textContent = `${baseText} Orele NU se vor scădea (învoire justificată).`;
       infoText.style.color = '#1e40af';
     }
 
@@ -800,8 +800,8 @@ class Dashboard {
     };
 
     const tipTexts = {
-      personal: '👤 Învoire Personal',
-      medical_urgent: '🚨 Urgență Medicală',
+      personal: '👤 Învoire personală',
+      invoire_justificata: '📋 Învoire justificată',
     };
 
     return `
@@ -1015,8 +1015,8 @@ class Dashboard {
 
   getTipTextCerere(tip) {
     const tipTexts = {
-      personal: 'Învoire Personal',
-      medical_urgent: 'Urgență Medicală',
+      personal: 'Învoire personală',
+      invoire_justificata: 'Învoire justificată',
     };
     return tipTexts[tip] || tip;
   }

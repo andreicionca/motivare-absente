@@ -37,7 +37,7 @@ const TIPURI_MOTIVARI = {
 // Tipuri cereri învoire scurtă (formular)
 const TIPURI_CERERI = {
   PERSONAL: 'personal',
-  MEDICAL_URGENT: 'medical_urgent',
+  INVOIRE_JUSTIFICATA: 'invoire_justificata',
 };
 
 // Cloudinary (public, safe în browser)
