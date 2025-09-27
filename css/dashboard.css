@@ -817,4 +817,11 @@ body {
     max-width: 600px;
     margin: 0 auto;
   }
+  .bottom-nav {
+    max-width: 800px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
 }
