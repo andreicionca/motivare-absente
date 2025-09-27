@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motivări Școlare - Selectare Rol</title>
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📚 Motivări Școlare</h1>
+        <p>Selectează rolul tău pentru a continua</p>
+      </div>
+
+      <div class="role-buttons">
+        <button class="role-btn diriginte-btn" onclick="selectRole('diriginte')">
+          👨‍🏫 Sunt diriginte
+        </button>
+
+        <button class="role-btn parinte-btn" onclick="selectRole('parinte')">
+          👨‍👩‍👧‍👦 Sunt părinte
+        </button>
+
+        <button class="role-btn elev-btn" onclick="selectRole('elev')">🎓 Sunt elev</button>
+      </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+      function selectRole(role) {
+        if (role === 'diriginte') {
+          window.location.href = 'login.html?role=diriginte';
+        } else {
+          window.location.href = 'login.html?role=' + role;
+        }
+      }
+    </script>
+  </body>
+</html>

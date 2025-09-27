@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Motivări Școlare</title>
+    <link rel="stylesheet" href="css/login.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header cu rol selectat -->
+      <div class="header">
+        <button class="back-btn" onclick="goBack()">← Înapoi</button>
+        <h1 id="page-title">Login</h1>
+        <div class="role-indicator" id="role-indicator"></div>
+      </div>
+
+      <!-- Formular Diriginte -->
+      <div class="login-form" id="diriginte-form" style="display: none">
+        <div class="form-icon">👨‍🏫</div>
+        <h2>Autentificare Diriginte</h2>
+
+        <form id="diriginte-login-form">
+          <div class="input-group">
+            <label for="diriginte-email">Email</label>
+            <input
+              type="email"
+              id="diriginte-email"
+              name="email"
+              required
+              placeholder="email@scoala.ro"
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="diriginte-password">Parolă</label>
+            <input
+              type="password"
+              id="diriginte-password"
+              name="password"
+              required
+              placeholder="Parola"
+            />
+          </div>
+
+          <button type="submit" class="login-btn diriginte-btn">Intră în cont</button>
+        </form>
+      </div>
+
+      <!-- Formular Elev -->
+      <div class="login-form" id="elev-form" style="display: none">
+        <div class="form-icon">🎓</div>
+        <h2>Autentificare Elev</h2>
+
+        <form id="elev-login-form">
+          <div class="input-group">
+            <label for="elev-nume">Nume</label>
+            <input type="text" id="elev-nume" name="nume" required placeholder="Popescu" />
+          </div>
+
+          <div class="input-group">
+            <label for="elev-cod">Cod Personal</label>
+            <input type="text" id="elev-cod" name="cod" required placeholder="A4X3" maxlength="4" />
+          </div>
+
+          <button type="submit" class="login-btn elev-btn">Intră în cont</button>
+        </form>
+      </div>
+
+      <!-- Formular Părinte -->
+      <div class="login-form" id="parinte-form" style="display: none">
+        <div class="form-icon">👨‍👩‍👧‍👦</div>
+        <h2>Autentificare Părinte</h2>
+
+        <form id="parinte-login-form">
+          <div class="input-group">
+            <label for="parinte-nume">Nume</label>
+            <input type="text" id="parinte-nume" name="nume" required placeholder="Popescu" />
+          </div>
+
+          <div class="input-group">
+            <label for="parinte-cod">Cod Personal</label>
+            <input
+              type="text"
+              id="parinte-cod"
+              name="cod"
+              required
+              placeholder="A4X3"
+              maxlength="4"
+            />
+          </div>
+
+          <button type="submit" class="login-btn parinte-btn">Intră în cont</button>
+        </form>
+      </div>
+
+      <!-- Loading & Error -->
+      <div class="loading" id="loading" style="display: none">
+        <div class="spinner"></div>
+        <p>Se verifică datele...</p>
+      </div>
+
+      <div class="error-message" id="error-message" style="display: none">
+        <span id="error-text"></span>
+        <button onclick="hideError()">×</button>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+      // Detectează rolul din URL și afișează formularul corespunzător
+      document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get('role');
+
+        if (role) {
+          showLoginForm(role);
+        } else {
+          // Redirect înapoi la index dacă nu e specificat rolul
+          window.location.href = 'index.html';
+        }
+
+        // Event listeners pentru formulare
+        setupFormHandlers();
+      });
+
+      function showLoginForm(role) {
+        // Ascunde toate formularele
+        document.querySelectorAll('.login-form').forEach((form) => {
+          form.style.display = 'none';
+        });
+
+        // Afișează formularul pentru rolul selectat
+        const formId = role + '-form';
+        const form = document.getElementById(formId);
+        if (form) {
+          form.style.display = 'block';
+
+          // Actualizează indicatorul de rol
+          const indicator = document.getElementById('role-indicator');
+          const icons = {
+            diriginte: '👨‍🏫 Diriginte',
+            elev: '🎓 Elev',
+            parinte: '👨‍👩‍👧‍👦 Părinte',
+          };
+          indicator.textContent = icons[role];
+        }
+      }
+
+      function setupFormHandlers() {
+        // Diriginte form
+        document.getElementById('diriginte-login-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('diriginte-email').value;
+          const password = document.getElementById('diriginte-password').value;
+          await handleLogin('diriginte', { email, password });
+        });
+
+        // Elev form
+        document.getElementById('elev-login-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const nume = document.getElementById('elev-nume').value;
+          const cod = document.getElementById('elev-cod').value;
+          await handleLogin('elev', { nume, cod });
+        });
+
+        // Părinte form
+        document.getElementById('parinte-login-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const nume = document.getElementById('parinte-nume').value;
+          const cod = document.getElementById('parinte-cod').value;
+          await handleLogin('parinte', { nume, cod });
+        });
+      }
+
+      async function handleLogin(role, credentials) {
+        showLoading(true);
+        hideError();
+
+        try {
+          let result;
+
+          if (role === 'diriginte') {
+            result = await auth.loginDiriginte(credentials.email, credentials.password);
+          } else {
+            result = await auth.loginUtilizator(credentials.nume, credentials.cod, role);
+          }
+
+          if (result.success) {
+            auth.redirectAfterLogin();
+          } else {
+            showError(result.error);
+          }
+        } catch (error) {
+          showError('Eroare de conectare. Încearcă din nou.');
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function goBack() {
+        window.location.href = 'index.html';
+      }
+
+      function showLoading(show) {
+        document.getElementById('loading').style.display = show ? 'block' : 'none';
+      }
+
+      function showError(message) {
+        document.getElementById('error-text').textContent = message;
+        document.getElementById('error-message').style.display = 'block';
+      }
+
+      function hideError() {
+        document.getElementById('error-message').style.display = 'none';
+      }
+    </script>
+  </body>
+</html>
