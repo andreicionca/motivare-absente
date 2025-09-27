@@ -141,12 +141,12 @@ class Dashboard {
     });
 
     // Ascunde butonul Învoire de la părinte pentru elevi
-    if (this.currentUser.role === 'elev') {
-      const invoireLungaCard = document.getElementById('invoire-lunga-card');
-      if (invoireLungaCard) {
-        invoireLungaCard.style.display = 'none';
-      }
-    }
+    // if (this.currentUser.role === 'elev') {
+    //   const invoireLungaCard = document.getElementById('invoire-lunga-card');
+    //   if (invoireLungaCard) {
+    //     invoireLungaCard.style.display = 'none';
+    //   }
+    // }
   }
 
   async loadUserData() {
@@ -675,15 +675,7 @@ class Dashboard {
     });
   }
 
-  checkUploadPermissions() {
-    // Ascunde Învoire de la părinte pentru elevi
-    if (this.currentUser.role === 'elev') {
-      const invoireLungaCard = document.getElementById('invoire-lunga-card');
-      if (invoireLungaCard) {
-        invoireLungaCard.style.display = 'none';
-      }
-    }
-  }
+  checkUploadPermissions() {}
 
   // Display motivări și cereri
   displayMotivari() {
