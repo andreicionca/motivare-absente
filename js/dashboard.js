@@ -140,7 +140,7 @@ class Dashboard {
       el.textContent = avatar;
     });
 
-    // Ascunde butonul învoire lungă pentru elevi
+    // Ascunde butonul Învoire de la părinte pentru elevi
     if (this.currentUser.role === 'elev') {
       const invoireLungaCard = document.getElementById('invoire-lunga-card');
       if (invoireLungaCard) {
@@ -281,7 +281,7 @@ class Dashboard {
         break;
 
       case 'invoire_lunga':
-        // Pentru învoire lungă, perioada completă obligatorie
+        // Pentru Învoire de la părinte, perioada completă obligatorie
         perioadaSfarsitGroup.style.display = 'block';
         const perioadaSfarsit = document.getElementById('perioada-sfarsit');
         perioadaSfarsit.required = true;
@@ -690,7 +690,7 @@ class Dashboard {
   }
 
   checkUploadPermissions() {
-    // Ascunde învoire lungă pentru elevi
+    // Ascunde Învoire de la părinte pentru elevi
     if (this.currentUser.role === 'elev') {
       const invoireLungaCard = document.getElementById('invoire-lunga-card');
       if (invoireLungaCard) {
@@ -721,8 +721,8 @@ class Dashboard {
 
     const tipTexts = {
       medicala_clasica: '🏥 Medicală',
-      invoire_lunga: '📅 Învoire Lungă',
-      alte_motive: '📋 Alte Motive',
+      invoire_lunga: '📅 Învoire de la părinte',
+      alte_motive: '📋 Alte motive',
     };
 
     return `
@@ -1007,8 +1007,8 @@ class Dashboard {
   getTipTextMotivare(tip) {
     const tipTexts = {
       medicala_clasica: 'Medicală',
-      invoire_lunga: 'Învoire Lungă',
-      alte_motive: 'Alte Motive',
+      invoire_lunga: 'Învoire de la părinte',
+      alte_motive: 'Alte motive',
     };
     return tipTexts[tip] || tip;
   }
