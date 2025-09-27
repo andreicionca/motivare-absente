@@ -312,14 +312,38 @@ class Dashboard {
     const tipInput = document.getElementById('tip-cerere');
     tipInput.value = tip;
 
-    // Actualizează textul informativ
+    // Calculează orele personale folosite dinamic din cereri
+    const orePersonaleFolosite = this.cereri
+      .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
+      .reduce((total, c) => total + (c.ore_scazute || 0), 0);
+
+    const oreRamase = Config.APP_CONFIG.oreLimitaPersonale - orePersonaleFolosite;
+
+    // Actualizează textul informativ în funcție de rol și ore disponibile
     const infoText = document.getElementById('cerere-info-text');
+
     if (tip === 'personal') {
-      infoText.textContent =
-        'Cererea va fi trimisă părintelui pentru aprobare. Orele se vor scădea din cele 42 permise.';
+      const baseText =
+        this.currentUser.role === 'parinte'
+          ? 'Cererea va fi trimisă direct dirigintelui.'
+          : 'Cererea va fi trimisă părintelui pentru aprobare.';
+
+      infoText.textContent = `${baseText} Orele se vor scădea din cele 42 permise. Ore rămase: ${oreRamase}`;
+
+      // Adaugă styling pentru avertisment dacă sunt puține ore
+      if (oreRamase <= 5) {
+        infoText.style.color = '#ef4444'; // roșu pentru avertisment
+      } else {
+        infoText.style.color = '#1e40af'; // albastru normal
+      }
     } else {
-      infoText.textContent =
-        'Cererea va fi trimisă părintelui pentru aprobare. Orele NU se vor scădea (urgență medicală).';
+      const baseText =
+        this.currentUser.role === 'parinte'
+          ? 'Cererea va fi trimisă direct dirigintelui.'
+          : 'Cererea va fi trimisă părintelui pentru aprobare.';
+
+      infoText.textContent = `${baseText} Orele NU se vor scădea (urgență medicală).`;
+      infoText.style.color = '#1e40af';
     }
 
     // Scroll la formular
