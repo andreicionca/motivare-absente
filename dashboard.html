@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Motivări Școlare</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+  </head>
+  <body>
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="user-info">
+        <div class="avatar">
+          <span id="user-avatar">👤</span>
+        </div>
+        <div class="user-details">
+          <h2 id="user-name">Nume Utilizator</h2>
+          <p id="user-role">Elev • Clasa 10A</p>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="auth.logout()">Ieșire</button>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+      <!-- Pagina 1: Dashboard/Stats -->
+      <section class="page-content active" id="page-stats">
+        <div class="page-header">
+          <h2>📊 Statistici</h2>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card primary">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-info">
+              <h3 id="ore-ramase">42</h3>
+              <p>Ore personale rămase</p>
+            </div>
+          </div>
+
+          <div class="stat-card success">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <h3 id="absente-motivate">0</h3>
+              <p>Absențe motivate</p>
+            </div>
+          </div>
+
+          <div class="stat-card warning">
+            <div class="stat-icon">📄</div>
+            <div class="stat-info">
+              <h3 id="total-motivari">0</h3>
+              <p>Total motivări</p>
+            </div>
+          </div>
+
+          <div class="stat-card info">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <h3 id="in-asteptare">0</h3>
+              <p>În așteptare</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+          <h3>Activitate Recentă</h3>
+          <div class="activity-list" id="recent-activity">
+            <!-- Se încarcă dinamic -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Pagina 2: Încarcă Motivare -->
+      <section class="page-content" id="page-upload">
+        <div class="page-header">
+          <h2>📤 Încarcă Motivare</h2>
+        </div>
+
+        <!-- Tipuri Motivări -->
+        <div class="motivare-types">
+          <button class="type-card" onclick="selectMotivareType('medicala')">
+            <div class="type-icon">🏥</div>
+            <h3>Motivare Medicală</h3>
+            <p>Pentru zilele de boală</p>
+          </button>
+
+          <button class="type-card" onclick="selectMotivareType('invoire_scurta')">
+            <div class="type-icon">⏱️</div>
+            <h3>Învoire Scurtă</h3>
+            <p>Pentru câteva ore</p>
+          </button>
+
+          <button
+            class="type-card"
+            onclick="selectMotivareType('invoire_lunga')"
+            id="invoire-lunga-card"
+          >
+            <div class="type-icon">📅</div>
+            <h3>Învoire Lungă</h3>
+            <p>Pentru zile întregi</p>
+          </button>
+        </div>
+
+        <!-- Formular Motivare -->
+        <form class="motivare-form" id="motivare-form" style="display: none">
+          <input type="hidden" id="tip-motivare" name="tip_motivare" />
+
+          <div class="form-group">
+            <label for="perioada-inceput">Data început</label>
+            <input type="date" id="perioada-inceput" name="perioada_inceput" required />
+          </div>
+
+          <div class="form-group" id="perioada-sfarsit-group">
+            <label for="perioada-sfarsit">Data sfârșit</label>
+            <input type="date" id="perioada-sfarsit" name="perioada_sfarsit" />
+          </div>
+
+          <div class="form-group" id="ore-group" style="display: none">
+            <label for="ore-solicitare">Ore solicitate</label>
+            <input type="number" id="ore-solicitare" name="ore_solicitare" min="1" max="6" />
+          </div>
+
+          <div class="form-group" id="subtip-group" style="display: none">
+            <label>Tipul invoirii</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="subtip" value="invoire_scurta_personal" />
+                <span>Personal (se scade din cele 42 ore)</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="subtip" value="invoire_scurta_medical" />
+                <span>Medical (nu se scade)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="motiv">Motivul (opțional)</label>
+            <textarea id="motiv" name="motiv" placeholder="Descrie motivul absenței..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Atașează documentul</label>
+            <div class="upload-area" id="upload-area">
+              <div class="upload-placeholder">
+                <span class="upload-icon">📷</span>
+                <p>Fotografiază sau alege din galerie</p>
+              </div>
+              <input type="file" id="file-input" accept="image/*" />
+              <div class="upload-buttons">
+                <button type="button" class="upload-btn" onclick="openCamera()">📷 Cameră</button>
+                <button type="button" class="upload-btn" onclick="openGallery()">🖼️ Galerie</button>
+              </div>
+            </div>
+            <div class="image-preview" id="image-preview" style="display: none">
+              <img id="preview-img" src="" alt="Preview" />
+              <button type="button" class="remove-btn" onclick="removeImage()">×</button>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="resetForm()">Anulează</button>
+            <button type="submit" class="btn btn-primary">Trimite Motivarea</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Pagina 3: Motivările Mele -->
+      <section class="page-content" id="page-motivari">
+        <div class="page-header">
+          <h2>📄 Motivările Mele</h2>
+          <button class="refresh-btn" onclick="loadMotivari()">🔄</button>
+        </div>
+
+        <!-- Filtre -->
+        <div class="filters">
+          <button class="filter-btn active" data-filter="toate">Toate</button>
+          <button class="filter-btn" data-filter="in_asteptare">În verificare</button>
+          <button class="filter-btn" data-filter="aprobata">Aprobate</button>
+          <button class="filter-btn" data-filter="finalizata">Motivate</button>
+          <button class="filter-btn" data-filter="respinsa">Respinse</button>
+        </div>
+
+        <!-- Lista Motivări -->
+        <div class="motivari-list" id="motivari-list">
+          <!-- Se încarcă dinamic -->
+          <div class="empty-state" id="motivari-empty">
+            <div class="empty-icon">📝</div>
+            <p>Nu ai motivări</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pagina 4: Profil -->
+      <section class="page-content" id="page-profil">
+        <div class="page-header">
+          <h2>👤 Profilul Meu</h2>
+        </div>
+
+        <div class="profile-info">
+          <div class="profile-card">
+            <div class="profile-avatar">👤</div>
+            <h3 id="profile-name">Nume Prenume</h3>
+            <p id="profile-details">Elev • Clasa 10A</p>
+          </div>
+
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <span class="stat-label">An școlar</span>
+              <span class="stat-value">2024-2025</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-label">Ore folosite</span>
+              <span class="stat-value" id="profile-ore-folosite">0/42</span>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button class="profile-btn" onclick="showChangePassword()">🔒 Schimbă parola</button>
+            <button class="profile-btn danger" onclick="auth.logout()">🚪 Ieșire din cont</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-page="stats">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Statistici</span>
+      </button>
+
+      <button class="nav-item" data-page="upload">
+        <span class="nav-icon">📤</span>
+        <span class="nav-label">Încarcă</span>
+      </button>
+
+      <button class="nav-item" data-page="motivari">
+        <span class="nav-icon">📄</span>
+        <span class="nav-label">Motivările mele</span>
+      </button>
+
+      <button class="nav-item" data-page="profil">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Profil</span>
+      </button>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+  </body>
+</html>
