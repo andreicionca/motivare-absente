@@ -21,6 +21,9 @@
       <button class="logout-btn" onclick="auth.logout()">Ieșire</button>
     </header>
 
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
     <!-- Main Content Container -->
     <main class="main-content">
       <!-- Pagina 1: Dashboard/Stats -->
@@ -81,16 +84,10 @@
 
         <!-- Tipuri Motivări -->
         <div class="motivare-types">
-          <button class="type-card" onclick="selectMotivareType('medicala')">
+          <button class="type-card" onclick="selectMotivareType('medicala_clasica')">
             <div class="type-icon">🏥</div>
             <h3>Motivare Medicală</h3>
             <p>Pentru zilele de boală</p>
-          </button>
-
-          <button class="type-card" onclick="selectMotivareType('invoire_scurta')">
-            <div class="type-icon">⏱️</div>
-            <h3>Învoire Scurtă</h3>
-            <p>Pentru câteva ore</p>
           </button>
 
           <button
@@ -102,45 +99,17 @@
             <h3>Învoire Lungă</h3>
             <p>Pentru zile întregi</p>
           </button>
+
+          <button class="type-card" onclick="selectMotivareType('alte_motive')">
+            <div class="type-icon">📋</div>
+            <h3>Alte Motive</h3>
+            <p>Situații speciale</p>
+          </button>
         </div>
 
         <!-- Formular Motivare -->
         <form class="motivare-form" id="motivare-form" style="display: none">
           <input type="hidden" id="tip-motivare" name="tip_motivare" />
-
-          <div class="form-group">
-            <label for="perioada-inceput">Data început</label>
-            <input type="date" id="perioada-inceput" name="perioada_inceput" required />
-          </div>
-
-          <div class="form-group" id="perioada-sfarsit-group">
-            <label for="perioada-sfarsit">Data sfârșit</label>
-            <input type="date" id="perioada-sfarsit" name="perioada_sfarsit" />
-          </div>
-
-          <div class="form-group" id="ore-group" style="display: none">
-            <label for="ore-solicitare">Ore solicitate</label>
-            <input type="number" id="ore-solicitare" name="ore_solicitare" min="1" max="6" />
-          </div>
-
-          <div class="form-group" id="subtip-group" style="display: none">
-            <label>Tipul invoirii</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="subtip" value="invoire_scurta_personal" />
-                <span>Personal (se scade din cele 42 ore)</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="subtip" value="invoire_scurta_medical" />
-                <span>Medical (nu se scade)</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="motiv">Motivul (opțional)</label>
-            <textarea id="motiv" name="motiv" placeholder="Descrie motivul absenței..."></textarea>
-          </div>
 
           <div class="form-group">
             <label>Atașează documentul</label>
@@ -155,10 +124,32 @@
                 <button type="button" class="upload-btn" onclick="openGallery()">🖼️ Galerie</button>
               </div>
             </div>
-            <div class="image-preview" id="image-preview" style="display: none">
-              <img id="preview-img" src="" alt="Preview" />
-              <button type="button" class="remove-btn" onclick="removeImage()">×</button>
+
+            <!-- Image Preview Container -->
+            <div class="image-preview-container" id="image-preview-container" style="display: none">
+              <div class="image-preview-header">
+                <span>Document atașat</span>
+                <button type="button" class="remove-image-btn" onclick="removeImage()">×</button>
+              </div>
+              <div class="image-preview-wrapper">
+                <img id="preview-img" src="" alt="Preview document" />
+              </div>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="perioada-inceput">Data început</label>
+            <input type="date" id="perioada-inceput" name="perioada_inceput" required />
+          </div>
+
+          <div class="form-group" id="perioada-sfarsit-group">
+            <label for="perioada-sfarsit">Data sfârșit</label>
+            <input type="date" id="perioada-sfarsit" name="perioada_sfarsit" />
+          </div>
+
+          <div class="form-group">
+            <label for="motiv">Motivul (opțional)</label>
+            <textarea id="motiv" name="motiv" placeholder="Descrie motivul absenței..."></textarea>
           </div>
 
           <div class="form-actions">
@@ -168,7 +159,70 @@
         </form>
       </section>
 
-      <!-- Pagina 3: Motivările Mele -->
+      <!-- Pagina 3: Solicit Învoire -->
+      <section class="page-content" id="page-cereri">
+        <div class="page-header">
+          <h2>⚡ Solicit Învoire</h2>
+        </div>
+
+        <!-- Tipuri Cereri -->
+        <div class="cereri-types">
+          <button class="type-card" onclick="selectCerereType('personal')">
+            <div class="type-icon">👤</div>
+            <h3>Învoire Personală</h3>
+            <p>Se scade din cele 42 ore</p>
+          </button>
+
+          <button class="type-card" onclick="selectCerereType('medical_urgent')">
+            <div class="type-icon">🚨</div>
+            <h3>Urgență Medicală</h3>
+            <p>Nu se scade din ore</p>
+          </button>
+        </div>
+
+        <!-- Formular Cerere -->
+        <form class="cerere-form" id="cerere-form" style="display: none">
+          <input type="hidden" id="tip-cerere" name="tip_cerere" />
+
+          <div class="form-group">
+            <label for="data-solicitata">Data solicitată</label>
+            <input type="date" id="data-solicitata" name="data_solicitata" required />
+          </div>
+
+          <div class="form-group">
+            <label for="ora-inceput">Ora început</label>
+            <input type="time" id="ora-inceput" name="ora_inceput" required />
+          </div>
+
+          <div class="form-group">
+            <label for="ora-sfarsit">Ora sfârșit</label>
+            <input type="time" id="ora-sfarsit" name="ora_sfarsit" required />
+          </div>
+
+          <div class="form-group">
+            <label for="motiv-cerere">Motivul</label>
+            <textarea
+              id="motiv-cerere"
+              name="motiv"
+              placeholder="Descrie motivul invoirii..."
+              required
+            ></textarea>
+          </div>
+
+          <div class="cerere-info">
+            <p id="cerere-info-text">Cererea va fi trimisă părintelui pentru aprobare.</p>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="resetCerereForm()">
+              Anulează
+            </button>
+            <button type="submit" class="btn btn-primary">Trimite Cererea</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Pagina 4: Motivările Mele -->
       <section class="page-content" id="page-motivari">
         <div class="page-header">
           <h2>📄 Motivările Mele</h2>
@@ -178,7 +232,7 @@
         <!-- Filtre -->
         <div class="filters">
           <button class="filter-btn active" data-filter="toate">Toate</button>
-          <button class="filter-btn" data-filter="in_asteptare">În verificare</button>
+          <button class="filter-btn" data-filter="in_asteptare">În așteptare</button>
           <button class="filter-btn" data-filter="aprobata">Aprobate</button>
           <button class="filter-btn" data-filter="finalizata">Motivate</button>
           <button class="filter-btn" data-filter="respinsa">Respinse</button>
@@ -190,37 +244,6 @@
           <div class="empty-state" id="motivari-empty">
             <div class="empty-icon">📝</div>
             <p>Nu ai motivări</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Pagina 4: Profil -->
-      <section class="page-content" id="page-profil">
-        <div class="page-header">
-          <h2>👤 Profilul Meu</h2>
-        </div>
-
-        <div class="profile-info">
-          <div class="profile-card">
-            <div class="profile-avatar">👤</div>
-            <h3 id="profile-name">Nume Prenume</h3>
-            <p id="profile-details">Elev • Clasa 10A</p>
-          </div>
-
-          <div class="profile-stats">
-            <div class="profile-stat">
-              <span class="stat-label">An școlar</span>
-              <span class="stat-value">2024-2025</span>
-            </div>
-            <div class="profile-stat">
-              <span class="stat-label">Ore folosite</span>
-              <span class="stat-value" id="profile-ore-folosite">0/42</span>
-            </div>
-          </div>
-
-          <div class="profile-actions">
-            <button class="profile-btn" onclick="showChangePassword()">🔒 Schimbă parola</button>
-            <button class="profile-btn danger" onclick="auth.logout()">🚪 Ieșire din cont</button>
           </div>
         </div>
       </section>
@@ -238,14 +261,14 @@
         <span class="nav-label">Încarcă</span>
       </button>
 
+      <button class="nav-item" data-page="cereri">
+        <span class="nav-icon">⚡</span>
+        <span class="nav-label">Solicit</span>
+      </button>
+
       <button class="nav-item" data-page="motivari">
         <span class="nav-icon">📄</span>
         <span class="nav-label">Motivările mele</span>
-      </button>
-
-      <button class="nav-item" data-page="profil">
-        <span class="nav-icon">👤</span>
-        <span class="nav-label">Profil</span>
       </button>
     </nav>
 

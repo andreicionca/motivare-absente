@@ -10,7 +10,7 @@ const APP_CONFIG = {
   apiBase: '/.netlify/functions', // Base URL pentru functions
 };
 
-// Statusuri motivări
+// Statusuri motivări (cu imagine)
 const STATUS_MOTIVARI = {
   IN_ASTEPTARE: 'in_asteptare',
   APROBATA: 'aprobata',
@@ -18,12 +18,26 @@ const STATUS_MOTIVARI = {
   FINALIZATA: 'finalizata',
 };
 
-// Tipuri motivări
+// Statusuri cereri învoire scurtă (formular)
+const STATUS_CERERI = {
+  CERERE_TRIMISA: 'cerere_trimisa',
+  APROBATA_PARINTE: 'aprobata_parinte',
+  ACCEPTATA_DIRIGINTE: 'acceptata_diriginte',
+  RESPINSA: 'respinsa',
+  FINALIZATA: 'finalizata',
+};
+
+// Tipuri motivări (cu imagine)
 const TIPURI_MOTIVARI = {
-  MEDICALA: 'medicala',
-  INVOIRE_SCURTA_PERSONAL: 'invoire_scurta_personal',
-  INVOIRE_SCURTA_MEDICAL: 'invoire_scurta_medical',
+  MEDICALA_CLASICA: 'medicala_clasica',
   INVOIRE_LUNGA: 'invoire_lunga',
+  ALTE_MOTIVE: 'alte_motive',
+};
+
+// Tipuri cereri învoire scurtă (formular)
+const TIPURI_CERERI = {
+  PERSONAL: 'personal',
+  MEDICAL_URGENT: 'medical_urgent',
 };
 
 // Cloudinary (public, safe în browser)
@@ -36,6 +50,8 @@ const CLOUDINARY_CONFIG = {
 window.Config = {
   APP_CONFIG,
   STATUS_MOTIVARI,
+  STATUS_CERERI,
   TIPURI_MOTIVARI,
+  TIPURI_CERERI,
   CLOUDINARY_CONFIG,
 };

@@ -4,6 +4,7 @@ class Dashboard {
   constructor() {
     this.currentUser = null;
     this.motivari = [];
+    this.cereri = [];
     this.currentFilter = 'toate';
     this.selectedFile = null;
     this.init();
@@ -72,11 +73,11 @@ class Dashboard {
         this.resetUploadForm();
         this.checkUploadPermissions();
         break;
+      case 'cereri':
+        this.resetCerereForm();
+        break;
       case 'motivari':
         this.loadMotivari();
-        break;
-      case 'profil':
-        this.updateProfile();
         break;
     }
   }
@@ -86,6 +87,12 @@ class Dashboard {
     const motivareForm = document.getElementById('motivare-form');
     if (motivareForm) {
       motivareForm.addEventListener('submit', (e) => this.handleMotivareSubmit(e));
+    }
+
+    // Form submit pentru cerere
+    const cerereForm = document.getElementById('cerere-form');
+    if (cerereForm) {
+      cerereForm.addEventListener('submit', (e) => this.handleCerereSubmit(e));
     }
 
     // Filtre motivări
@@ -102,6 +109,14 @@ class Dashboard {
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
       fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+    }
+
+    // Time inputs pentru cereri
+    const oraInceput = document.getElementById('ora-inceput');
+    const oraSfarsit = document.getElementById('ora-sfarsit');
+    if (oraInceput && oraSfarsit) {
+      oraInceput.addEventListener('change', () => this.calculateOreSolicitate());
+      oraSfarsit.addEventListener('change', () => this.calculateOreSolicitate());
     }
   }
 
@@ -120,7 +135,7 @@ class Dashboard {
 
     // Avatar
     const avatar = this.currentUser.nume.charAt(0).toUpperCase();
-    document.querySelectorAll('#user-avatar, .profile-avatar').forEach((el) => {
+    document.querySelectorAll('#user-avatar').forEach((el) => {
       el.textContent = avatar;
     });
 
@@ -173,14 +188,15 @@ class Dashboard {
         },
         body: JSON.stringify({
           elevId: elevId,
-          action: 'get-motivari',
+          action: 'get-all-data',
         }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        this.motivari = result.data;
+        this.motivari = result.data.motivari || [];
+        this.cereri = result.data.cereri || [];
         this.displayMotivari();
         this.updateStats();
       } else {
@@ -188,7 +204,7 @@ class Dashboard {
       }
     } catch (error) {
       console.error('Eroare încărcare motivări:', error);
-      this.showError('Eroare la încărcarea motivărilor');
+      this.showToast('Eroare la încărcarea motivărilor', 'error');
     }
   }
 
@@ -196,29 +212,26 @@ class Dashboard {
     const oreRamase =
       Config.APP_CONFIG.oreLimitaPersonale - (this.currentUser.orePersonaleFolosite || 0);
 
-    const totalMotivari = this.motivari.length;
-    const inAsteptare = this.motivari.filter((m) => m.status === 'in_asteptare').length;
-    const absenteMotivate = this.motivari.filter((m) => m.status === 'finalizata').length;
+    const totalMotivari = this.motivari.length + this.cereri.length;
+    const inAsteptare =
+      this.motivari.filter((m) => m.status === 'in_asteptare').length +
+      this.cereri.filter((c) => c.status === 'cerere_trimisa' || c.status === 'aprobata_parinte')
+        .length;
+    const absenteMotivate =
+      this.motivari.filter((m) => m.status === 'finalizata').length +
+      this.cereri.filter((c) => c.status === 'finalizata').length;
 
     // Actualizează UI
     document.getElementById('ore-ramase').textContent = oreRamase;
     document.getElementById('total-motivari').textContent = totalMotivari;
     document.getElementById('in-asteptare').textContent = inAsteptare;
     document.getElementById('absente-motivate').textContent = absenteMotivate;
-
-    // Profil
-    const profileOre = document.getElementById('profile-ore-folosite');
-    if (profileOre) {
-      profileOre.textContent = `${this.currentUser.orePersonaleFolosite || 0}/${
-        Config.APP_CONFIG.oreLimitaPersonale
-      }`;
-    }
   }
 
-  // Selectare tip motivare (Pagina 2)
+  // Selectare tip motivare (Pagina Upload)
   selectMotivareType(tip) {
     // Resetează selecția anterioară
-    document.querySelectorAll('.type-card').forEach((card) => {
+    document.querySelectorAll('.motivare-types .type-card').forEach((card) => {
       card.classList.remove('selected');
     });
 
@@ -239,31 +252,76 @@ class Dashboard {
   configureFormForType(tip) {
     const tipInput = document.getElementById('tip-motivare');
     const perioadaSfarsitGroup = document.getElementById('perioada-sfarsit-group');
-    const oreGroup = document.getElementById('ore-group');
-    const subtipGroup = document.getElementById('subtip-group');
 
     tipInput.value = tip;
 
-    // Resetează toate grupurile
-    perioadaSfarsitGroup.style.display = 'block';
-    oreGroup.style.display = 'none';
-    subtipGroup.style.display = 'none';
-
     switch (tip) {
-      case 'medicala':
+      case 'medicala_clasica':
         // Pentru medicală, perioada sfârșit e opțională
-        break;
-
-      case 'invoire_scurta':
-        // Pentru învoire scurtă, doar ore, nu zile
-        perioadaSfarsitGroup.style.display = 'none';
-        oreGroup.style.display = 'block';
-        subtipGroup.style.display = 'block';
+        perioadaSfarsitGroup.style.display = 'block';
         break;
 
       case 'invoire_lunga':
-        // Pentru învoire lungă, perioada completă
+        // Pentru învoire lungă, perioada completă obligatorie
+        perioadaSfarsitGroup.style.display = 'block';
+        const perioadaSfarsit = document.getElementById('perioada-sfarsit');
+        perioadaSfarsit.required = true;
         break;
+
+      case 'alte_motive':
+        // Pentru alte motive, perioada sfârșit opțională
+        perioadaSfarsitGroup.style.display = 'block';
+        break;
+    }
+  }
+
+  // Selectare tip cerere (Pagina Cereri)
+  selectCerereType(tip) {
+    // Resetează selecția anterioară
+    document.querySelectorAll('.cereri-types .type-card').forEach((card) => {
+      card.classList.remove('selected');
+    });
+
+    // Selectează noul tip
+    event.target.closest('.type-card').classList.add('selected');
+
+    // Afișează formularul
+    const form = document.getElementById('cerere-form');
+    form.style.display = 'block';
+
+    // Configurează formularul pentru cerere
+    const tipInput = document.getElementById('tip-cerere');
+    tipInput.value = tip;
+
+    // Actualizează textul informativ
+    const infoText = document.getElementById('cerere-info-text');
+    if (tip === 'personal') {
+      infoText.textContent =
+        'Cererea va fi trimisă părintelui pentru aprobare. Orele se vor scădea din cele 42 permise.';
+    } else {
+      infoText.textContent =
+        'Cererea va fi trimisă părintelui pentru aprobare. Orele NU se vor scădea (urgență medicală).';
+    }
+
+    // Scroll la formular
+    form.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  calculateOreSolicitate() {
+    const oraInceput = document.getElementById('ora-inceput').value;
+    const oraSfarsit = document.getElementById('ora-sfarsit').value;
+
+    if (oraInceput && oraSfarsit) {
+      const start = new Date(`2000-01-01T${oraInceput}`);
+      const end = new Date(`2000-01-01T${oraSfarsit}`);
+
+      if (end > start) {
+        const diffMs = end - start;
+        const oreSolicitate = Math.ceil(diffMs / (1000 * 60 * 60)); // Convert to hours
+
+        // Afișează orele calculate (opțional)
+        console.log(`Ore solicitate: ${oreSolicitate}`);
+      }
     }
   }
 
@@ -276,29 +334,30 @@ class Dashboard {
     // Validări
     if (!this.validateMotivareForm(motivareData)) return;
 
-    this.showLoading(true);
+    this.showToast('Se încarcă...', 'info');
 
     try {
-      // Upload imagine dacă există
+      // Upload imagine obligatoriu
       let urlImagine = null;
       if (this.selectedFile) {
         urlImagine = await this.uploadImage(this.selectedFile);
+      } else {
+        this.showToast('Documentul este obligatoriu', 'error');
+        return;
       }
 
       // Calculează ore scăzute
-      const oreScazute = this.calculateOreScazute(motivareData);
+      const oreScazute = this.calculateOreScazuteMotivare(motivareData);
 
       // Pregătește datele pentru inserare
       const insertData = {
         elev_id: this.currentUser.role === 'elev' ? this.currentUser.id : this.currentUser.elevId,
-        tip_motivare: motivareData.subtip || motivareData.tip_motivare,
+        tip_motivare: motivareData.tip_motivare,
         perioada_inceput: motivareData.perioada_inceput,
         perioada_sfarsit: motivareData.perioada_sfarsit || null,
-        ore_solicitare: motivareData.ore_solicitare ? parseInt(motivareData.ore_solicitare) : null,
         motiv: motivareData.motiv || null,
         url_imagine: urlImagine,
         trimis_de: this.currentUser.role,
-        trimis_de_id: this.currentUser.id,
         ore_scazute: oreScazute,
       };
 
@@ -314,7 +373,7 @@ class Dashboard {
       const result = await response.json();
 
       if (result.success) {
-        this.showSuccess(result.message);
+        this.showToast('Motivarea a fost trimisă cu succes!', 'success');
         this.resetUploadForm();
         await this.loadMotivari();
         this.switchPage('motivari');
@@ -323,45 +382,116 @@ class Dashboard {
       }
     } catch (error) {
       console.error('Eroare salvare motivare:', error);
-      this.showError('Eroare la trimiterea motivării');
-    } finally {
-      this.showLoading(false);
+      this.showToast('Eroare la trimiterea motivării', 'error');
+    }
+  }
+
+  async handleCerereSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const cerereData = Object.fromEntries(formData.entries());
+
+    // Validări
+    if (!this.validateCerereForm(cerereData)) return;
+
+    this.showToast('Se trimite cererea...', 'info');
+
+    try {
+      // Calculează ore solicitate
+      const oreSolicitate = this.calculateOreSolicitateCerere(cerereData);
+
+      // Pregătește datele pentru inserare
+      const insertData = {
+        elev_id: this.currentUser.role === 'elev' ? this.currentUser.id : this.currentUser.elevId,
+        tip_cerere: cerereData.tip_cerere,
+        data_solicitata: cerereData.data_solicitata,
+        ora_inceput: cerereData.ora_inceput,
+        ora_sfarsit: cerereData.ora_sfarsit,
+        ore_solicitate: oreSolicitate,
+        motiv: cerereData.motiv,
+        trimis_de: this.currentUser.role,
+        aproba_parinte_digital: this.currentUser.role === 'parinte',
+      };
+
+      // Trimite prin Netlify Function
+      const response = await fetch('/.netlify/functions/submit-cerere', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(insertData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.showToast('Cererea a fost trimisă cu succes!', 'success');
+        this.resetCerereForm();
+        await this.loadMotivari();
+        this.switchPage('motivari');
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Eroare salvare cerere:', error);
+      this.showToast('Eroare la trimiterea cererii', 'error');
     }
   }
 
   validateMotivareForm(data) {
     if (!data.tip_motivare) {
-      this.showError('Selectează tipul motivării');
+      this.showToast('Selectează tipul motivării', 'error');
       return false;
     }
 
     if (!data.perioada_inceput) {
-      this.showError('Selectează data de început');
+      this.showToast('Selectează data de început', 'error');
       return false;
     }
 
-    if (data.tip_motivare.includes('invoire_scurta') && !data.ore_solicitare) {
-      this.showError('Introdu numărul de ore pentru învoire scurtă');
-      return false;
-    }
-
-    if (data.tip_motivare.includes('invoire_scurta') && !data.subtip) {
-      this.showError('Selectează tipul invoirii scurte');
+    if (!this.selectedFile) {
+      this.showToast('Atașează documentul', 'error');
       return false;
     }
 
     return true;
   }
 
-  calculateOreScazute(data) {
-    const tip = data.subtip || data.tip_motivare;
-
-    if (tip === 'medicala' || tip === 'invoire_scurta_medical') {
-      return 0; // Nu se scad ore pentru motivări medicale
+  validateCerereForm(data) {
+    if (!data.tip_cerere) {
+      this.showToast('Selectează tipul cererii', 'error');
+      return false;
     }
 
-    if (tip === 'invoire_scurta_personal') {
-      return parseInt(data.ore_solicitare) || 0;
+    if (!data.data_solicitata) {
+      this.showToast('Selectează data solicitată', 'error');
+      return false;
+    }
+
+    if (!data.ora_inceput || !data.ora_sfarsit) {
+      this.showToast('Completează orele', 'error');
+      return false;
+    }
+
+    if (data.ora_sfarsit <= data.ora_inceput) {
+      this.showToast('Ora sfârșit trebuie să fie după ora început', 'error');
+      return false;
+    }
+
+    if (!data.motiv) {
+      this.showToast('Completează motivul', 'error');
+      return false;
+    }
+
+    return true;
+  }
+
+  calculateOreScazuteMotivare(data) {
+    const tip = data.tip_motivare;
+
+    if (tip === 'medicala_clasica' || tip === 'alte_motive') {
+      return 0; // Nu se scad ore pentru motivări medicale sau alte motive
     }
 
     if (tip === 'invoire_lunga') {
@@ -384,12 +514,18 @@ class Dashboard {
     return 0;
   }
 
+  calculateOreSolicitateCerere(data) {
+    const start = new Date(`2000-01-01T${data.ora_inceput}`);
+    const end = new Date(`2000-01-01T${data.ora_sfarsit}`);
+
+    const diffMs = end - start;
+    return Math.ceil(diffMs / (1000 * 60 * 60)); // Convert to hours, rounded up
+  }
+
   async uploadImage(file) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', Config.CLOUDINARY_CONFIG.uploadPreset);
-    // Elimină această linie:
-    // formData.append('folder', 'motivari-scolare');
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${Config.CLOUDINARY_CONFIG.cloudName}/image/upload`,
@@ -420,12 +556,12 @@ class Dashboard {
         file.type.includes(format.replace('jpg', 'jpeg'))
       )
     ) {
-      this.showError('Format neacceptat. Folosește JPG, PNG sau HEIC');
+      this.showToast('Format neacceptat. Folosește JPG, PNG sau HEIC', 'error');
       return;
     }
 
     if (file.size > Config.APP_CONFIG.maxFileSize) {
-      this.showError('Fișierul este prea mare. Maximum 5MB');
+      this.showToast('Fișierul este prea mare. Maximum 5MB', 'error');
       return;
     }
 
@@ -436,11 +572,11 @@ class Dashboard {
   showImagePreview(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const preview = document.getElementById('image-preview');
+      const container = document.getElementById('image-preview-container');
       const img = document.getElementById('preview-img');
 
       img.src = e.target.result;
-      preview.style.display = 'block';
+      container.style.display = 'block';
 
       // Ascunde upload area
       document.getElementById('upload-area').style.display = 'none';
@@ -462,7 +598,7 @@ class Dashboard {
 
   removeImage() {
     this.selectedFile = null;
-    document.getElementById('image-preview').style.display = 'none';
+    document.getElementById('image-preview-container').style.display = 'none';
     document.getElementById('upload-area').style.display = 'block';
     document.getElementById('file-input').value = '';
   }
@@ -475,11 +611,24 @@ class Dashboard {
     }
 
     // Resetează selecția tipului
-    document.querySelectorAll('.type-card').forEach((card) => {
+    document.querySelectorAll('.motivare-types .type-card').forEach((card) => {
       card.classList.remove('selected');
     });
 
     this.removeImage();
+  }
+
+  resetCerereForm() {
+    const form = document.getElementById('cerere-form');
+    if (form) {
+      form.reset();
+      form.style.display = 'none';
+    }
+
+    // Resetează selecția tipului
+    document.querySelectorAll('.cereri-types .type-card').forEach((card) => {
+      card.classList.remove('selected');
+    });
   }
 
   checkUploadPermissions() {
@@ -492,19 +641,26 @@ class Dashboard {
     }
   }
 
-  // Motivari display și filtering
-  // Adaugă verificare în displayMotivari()
+  // Display motivări și cereri
   displayMotivari() {
     const container = document.getElementById('motivari-list');
     const emptyState = document.getElementById('motivari-empty');
 
-    // Verificare dacă elementele există
     if (!container) {
       console.error('Element motivari-list nu există');
       return;
     }
 
-    if (this.motivari.length === 0) {
+    // Combină motivări și cereri
+    const allItems = [
+      ...this.motivari.map((m) => ({ ...m, type: 'motivare' })),
+      ...this.cereri.map((c) => ({ ...c, type: 'cerere' })),
+    ];
+
+    // Sortează după data creării (cel mai recent primul)
+    allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (allItems.length === 0) {
       container.innerHTML = '';
       if (emptyState) {
         emptyState.style.display = 'block';
@@ -516,10 +672,12 @@ class Dashboard {
       emptyState.style.display = 'none';
     }
 
-    const motivariHTML = this.motivari
-      .map((motivare) => this.createMotivareCard(motivare))
+    const itemsHTML = allItems
+      .map((item) =>
+        item.type === 'motivare' ? this.createMotivareCard(item) : this.createCerereCard(item)
+      )
       .join('');
-    container.innerHTML = motivariHTML;
+    container.innerHTML = itemsHTML;
   }
 
   createMotivareCard(motivare) {
@@ -538,67 +696,130 @@ class Dashboard {
     };
 
     const tipTexts = {
-      medicala: '🏥 Medicală',
-      invoire_scurta_personal: '⏱️ Învoire Personal',
-      invoire_scurta_medical: '⏱️ Învoire Medical',
+      medicala_clasica: '🏥 Medicală',
       invoire_lunga: '📅 Învoire Lungă',
+      alte_motive: '📋 Alte Motive',
     };
 
     return `
-            <div class="motivare-card">
-                <div class="card-header">
-                    <div class="motivare-tip">${
-                      tipTexts[motivare.tip_motivare] || motivare.tip_motivare
-                    }</div>
-                    <div class="status-badge" style="background: ${statusColors[motivare.status]};">
-                        ${statusTexts[motivare.status]}
-                    </div>
-                </div>
+      <div class="motivare-card">
+        <div class="card-header">
+          <div class="motivare-tip">${
+            tipTexts[motivare.tip_motivare] || motivare.tip_motivare
+          }</div>
+          <div class="status-badge" style="background: ${statusColors[motivare.status]};">
+            ${statusTexts[motivare.status]}
+          </div>
+        </div>
 
-                <div class="card-content">
-                    <div class="perioada">
-                        <strong>Perioada:</strong>
-                        ${this.formatDate(motivare.perioada_inceput)}
-                        ${
-                          motivare.perioada_sfarsit
-                            ? ` - ${this.formatDate(motivare.perioada_sfarsit)}`
-                            : ''
-                        }
-                        ${motivare.ore_solicitare ? ` (${motivare.ore_solicitare} ore)` : ''}
-                    </div>
+        <div class="card-content">
+          <div class="perioada">
+            <strong>Perioada:</strong>
+            ${this.formatDate(motivare.perioada_inceput)}
+            ${motivare.perioada_sfarsit ? ` - ${this.formatDate(motivare.perioada_sfarsit)}` : ''}
+          </div>
 
-                    ${
-                      motivare.motiv
-                        ? `<div class="motiv"><strong>Motiv:</strong> ${motivare.motiv}</div>`
-                        : ''
-                    }
+          ${
+            motivare.motiv
+              ? `<div class="motiv"><strong>Motiv:</strong> ${motivare.motiv}</div>`
+              : ''
+          }
 
-                    ${
-                      motivare.ore_scazute > 0
-                        ? `<div class="ore-scazute">Ore scăzute: ${motivare.ore_scazute}</div>`
-                        : ''
-                    }
-                </div>
+          ${
+            motivare.ore_scazute > 0
+              ? `<div class="ore-scazute">Ore scăzute: ${motivare.ore_scazute}</div>`
+              : ''
+          }
 
-                <div class="card-footer">
-                    <small>Trimis la: ${this.formatDateTime(motivare.created_at)}</small>
-                    ${
-                      motivare.url_imagine
-                        ? `<button class="view-image-btn" onclick="dashboard.viewImage('${motivare.url_imagine}')">
-                            📷 Vezi document
-                        </button>`
-                        : ''
-                    }
-                    ${
-                      motivare.status === 'in_asteptare'
-                        ? `<button class="delete-btn" onclick="dashboard.deleteMotivare(${motivare.id})">
-                            🗑️ Șterge
-                        </button>`
-                        : ''
-                    }
-                </div>
+          ${
+            motivare.url_imagine
+              ? `
+            <div class="card-image-container">
+              <img src="${motivare.url_imagine}" alt="Document motivare" loading="lazy" />
             </div>
-        `;
+          `
+              : ''
+          }
+        </div>
+
+        <div class="card-footer">
+          <small>Trimis la: ${this.formatDateTime(motivare.created_at)}</small>
+          ${
+            motivare.status === 'in_asteptare'
+              ? `
+            <button class="delete-btn" onclick="dashboard.deleteMotivare(${motivare.id})">
+              🗑️ Șterge
+            </button>
+          `
+              : ''
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  createCerereCard(cerere) {
+    const statusColors = {
+      cerere_trimisa: '#D97706',
+      aprobata_parinte: '#0891b2',
+      acceptata_diriginte: '#059669',
+      respinsa: '#EF4444',
+      finalizata: '#2563EB',
+    };
+
+    const statusTexts = {
+      cerere_trimisa: 'Trimisă',
+      aprobata_parinte: 'Aprobată de părinte',
+      acceptata_diriginte: 'Acceptată',
+      respinsa: 'Respinsă',
+      finalizata: 'Finalizată',
+    };
+
+    const tipTexts = {
+      personal: '👤 Învoire Personal',
+      medical_urgent: '🚨 Urgență Medicală',
+    };
+
+    return `
+      <div class="motivare-card">
+        <div class="card-header">
+          <div class="motivare-tip">${tipTexts[cerere.tip_cerere] || cerere.tip_cerere}</div>
+          <div class="status-badge" style="background: ${statusColors[cerere.status]};">
+            ${statusTexts[cerere.status]}
+          </div>
+        </div>
+
+        <div class="card-content">
+          <div class="perioada">
+            <strong>Data:</strong> ${this.formatDate(cerere.data_solicitata)}
+            <br><strong>Ore:</strong> ${cerere.ora_inceput} - ${cerere.ora_sfarsit} (${
+      cerere.ore_solicitate
+    }h)
+          </div>
+
+          <div class="motiv"><strong>Motiv:</strong> ${cerere.motiv}</div>
+
+          ${
+            cerere.ore_scazute > 0
+              ? `<div class="ore-scazute">Ore scăzute: ${cerere.ore_scazute}</div>`
+              : ''
+          }
+        </div>
+
+        <div class="card-footer">
+          <small>Trimis la: ${this.formatDateTime(cerere.created_at)}</small>
+          ${
+            cerere.status === 'cerere_trimisa'
+              ? `
+            <button class="delete-btn" onclick="dashboard.deleteCerere(${cerere.id})">
+              🗑️ Șterge
+            </button>
+          `
+              : ''
+          }
+        </div>
+      </div>
+    `;
   }
 
   updateFilterButtons() {
@@ -608,38 +829,18 @@ class Dashboard {
   }
 
   filterMotivari() {
-    let filteredMotivari = this.motivari;
-
-    if (this.currentFilter !== 'toate') {
-      filteredMotivari = this.motivari.filter((m) => m.status === this.currentFilter);
-    }
-
-    // Afișează motivările filtrate
-    const container = document.getElementById('motivari-list');
-    const emptyState = document.getElementById('motivari-empty');
-
-    if (filteredMotivari.length === 0) {
-      container.innerHTML = '';
-      emptyState.style.display = 'block';
-      return;
-    }
-
-    emptyState.style.display = 'none';
-    const motivariHTML = filteredMotivari.map((m) => this.createMotivareCard(m)).join('');
-    container.innerHTML = motivariHTML;
+    // Implementează filtrarea pentru ambele tipuri
+    this.displayMotivari(); // Pentru acum, afișează tot
   }
 
   async deleteMotivare(id) {
-    if (!confirm('Sigur vrei să ștergi această motivare?')) return;
-
     try {
-      const response = await fetch('/.netlify/functions/get-motivari', {
+      const response = await fetch('/.netlify/functions/delete-motivare', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'delete-motivare',
           motivareId: id,
         }),
       });
@@ -647,66 +848,97 @@ class Dashboard {
       const result = await response.json();
 
       if (result.success) {
-        this.showSuccess('Motivarea a fost ștearsă');
+        this.showToast('Motivarea a fost ștearsă', 'success');
         await this.loadMotivari();
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error('Eroare ștergere motivare:', error);
-      this.showError('Eroare la ștergerea motivării');
+      this.showToast('Eroare la ștergerea motivării', 'error');
     }
   }
 
-  viewImage(url) {
-    window.open(url, '_blank');
-  }
+  async deleteCerere(id) {
+    try {
+      const response = await fetch('/.netlify/functions/delete-cerere', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cerereId: id,
+        }),
+      });
 
-  updateProfile() {
-    document.getElementById(
-      'profile-name'
-    ).textContent = `${this.currentUser.nume} ${this.currentUser.prenume}`;
+      const result = await response.json();
 
-    const roleText = this.currentUser.role === 'elev' ? 'Elev' : 'Părinte';
-    document.getElementById(
-      'profile-details'
-    ).textContent = `${roleText} • Clasa ${this.currentUser.clasa}`;
+      if (result.success) {
+        this.showToast('Cererea a fost ștearsă', 'success');
+        await this.loadMotivari();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Eroare ștergere cerere:', error);
+      this.showToast('Eroare la ștergerea cererii', 'error');
+    }
   }
 
   async loadRecentActivity() {
-    const recentMotivari = this.motivari.slice(0, 5);
+    // Combină ultimele 5 activități
+    const allItems = [
+      ...this.motivari.map((m) => ({ ...m, type: 'motivare' })),
+      ...this.cereri.map((c) => ({ ...c, type: 'cerere' })),
+    ];
+
+    const recentItems = allItems
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5);
+
     const container = document.getElementById('recent-activity');
 
-    if (recentMotivari.length === 0) {
+    if (recentItems.length === 0) {
       container.innerHTML = '<p class="no-activity">Nu ai activitate recentă</p>';
       return;
     }
+    const activityHTML = recentItems
+      .map((item) => {
+        const tipText =
+          item.type === 'motivare'
+            ? this.getTipTextMotivare(item.tip_motivare)
+            : this.getTipTextCerere(item.tip_cerere);
 
-    const activityHTML = recentMotivari
-      .map(
-        (m) => `
-            <div class="activity-item">
-                <div class="activity-info">
-                    <span class="activity-type">${this.getTipText(m.tip_motivare)}</span>
-                    <small class="activity-date">${this.formatDate(m.created_at)}</small>
-                </div>
-                <span class="activity-status status-${m.status}">${this.getStatusText(
-          m.status
-        )}</span>
+        return `
+          <div class="activity-item">
+            <div class="activity-info">
+              <span class="activity-type">${tipText}</span>
+              <small class="activity-date">${this.formatDate(item.created_at)}</small>
             </div>
-        `
-      )
+            <span class="activity-status status-${item.status}">${this.getStatusText(
+          item.status
+        )}</span>
+          </div>
+        `;
+      })
       .join('');
 
     container.innerHTML = activityHTML;
   }
 
-  getTipText(tip) {
+  getTipTextMotivare(tip) {
     const tipTexts = {
-      medicala: 'Medicală',
-      invoire_scurta_personal: 'Învoire Personal',
-      invoire_scurta_medical: 'Învoire Medical',
+      medicala_clasica: 'Medicală',
       invoire_lunga: 'Învoire Lungă',
+      alte_motive: 'Alte Motive',
+    };
+    return tipTexts[tip] || tip;
+  }
+
+  getTipTextCerere(tip) {
+    const tipTexts = {
+      personal: 'Învoire Personal',
+      medical_urgent: 'Urgență Medicală',
     };
     return tipTexts[tip] || tip;
   }
@@ -717,6 +949,9 @@ class Dashboard {
       aprobata: 'Aprobată',
       respinsa: 'Respinsă',
       finalizata: 'Motivată',
+      cerere_trimisa: 'Trimisă',
+      aprobata_parinte: 'Aprobată de părinte',
+      acceptata_diriginte: 'Acceptată',
     };
     return statusTexts[status] || status;
   }
@@ -729,29 +964,61 @@ class Dashboard {
     return new Date(dateString).toLocaleString('ro-RO');
   }
 
-  showLoading(show) {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.style.display = show ? 'flex' : 'none';
+  // Toast notifications system
+  showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) {
+      // Fallback la alert dacă nu există containerul
+      alert(message);
+      return;
     }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span>${this.getToastIcon(type)}</span>
+        <span>${message}</span>
+      </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remove după 4 secunde
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 4000);
+
+    // Remove pe click
+    toast.addEventListener('click', () => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    });
   }
 
-  showSuccess(message) {
-    // Implementează notificare success
-    alert(message); // Temporary - poate fi înlocuit cu toast
-  }
-
-  showError(message) {
-    // Implementează notificare error
-    alert(message); // Temporary - poate fi înlocuit cu toast
+  getToastIcon(type) {
+    const icons = {
+      success: '✅',
+      error: '❌',
+      warning: '⚠️',
+      info: 'ℹ️',
+    };
+    return icons[type] || 'ℹ️';
   }
 }
 
 // Funcții globale pentru onclick handlers
 window.selectMotivareType = (tip) => dashboard.selectMotivareType(tip);
+window.selectCerereType = (tip) => dashboard.selectCerereType(tip);
 window.openCamera = () => dashboard.openCamera();
 window.openGallery = () => dashboard.openGallery();
 window.removeImage = () => dashboard.removeImage();
+window.resetForm = () => dashboard.resetUploadForm();
+window.resetCerereForm = () => dashboard.resetCerereForm();
+window.loadMotivari = () => dashboard.loadMotivari();
 
 // Inițializare
 let dashboard;
