@@ -11,7 +11,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { elevId, action } = JSON.parse(event.body);
+    const { elevId, action, motivareId } = JSON.parse(event.body);
 
     if (action === 'get-user-data') {
       // Încarcă datele elevului
@@ -33,7 +33,7 @@ exports.handler = async (event, context) => {
     }
 
     if (action === 'get-motivari') {
-      // Încarcă motivările
+      // Încarcă doar motivările (cu imagini)
       const { data, error } = await supabase
         .from('motivari')
         .select('*')
@@ -51,9 +51,37 @@ exports.handler = async (event, context) => {
       };
     }
 
-    if (action === 'delete-motivare') {
-      const { motivareId } = JSON.parse(event.body);
+    if (action === 'get-all-data') {
+      // Încarcă atât motivări cât și cereri
+      const [motivariResult, cereriResult] = await Promise.all([
+        supabase
+          .from('motivari')
+          .select('*')
+          .eq('elev_id', elevId)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('cereri_invoire_scurta')
+          .select('*')
+          .eq('elev_id', elevId)
+          .order('created_at', { ascending: false }),
+      ]);
 
+      if (motivariResult.error) throw motivariResult.error;
+      if (cereriResult.error) throw cereriResult.error;
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          data: {
+            motivari: motivariResult.data || [],
+            cereri: cereriResult.data || [],
+          },
+        }),
+      };
+    }
+
+    if (action === 'delete-motivare') {
       const { error } = await supabase.from('motivari').delete().eq('id', motivareId);
 
       if (error) throw error;
