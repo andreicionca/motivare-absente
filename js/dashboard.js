@@ -388,7 +388,8 @@ class Dashboard {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', Config.CLOUDINARY_CONFIG.uploadPreset);
-    formData.append('folder', 'motivari-scolare');
+    // Elimină această linie:
+    // formData.append('folder', 'motivari-scolare');
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${Config.CLOUDINARY_CONFIG.cloudName}/image/upload`,
@@ -401,6 +402,7 @@ class Dashboard {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Cloudinary error:', data);
       throw new Error('Eroare upload imagine');
     }
 
@@ -491,17 +493,28 @@ class Dashboard {
   }
 
   // Motivari display și filtering
+  // Adaugă verificare în displayMotivari()
   displayMotivari() {
     const container = document.getElementById('motivari-list');
     const emptyState = document.getElementById('motivari-empty');
 
-    if (this.motivari.length === 0) {
-      container.innerHTML = '';
-      emptyState.style.display = 'block';
+    // Verificare dacă elementele există
+    if (!container) {
+      console.error('Element motivari-list nu există');
       return;
     }
 
-    emptyState.style.display = 'none';
+    if (this.motivari.length === 0) {
+      container.innerHTML = '';
+      if (emptyState) {
+        emptyState.style.display = 'block';
+      }
+      return;
+    }
+
+    if (emptyState) {
+      emptyState.style.display = 'none';
+    }
 
     const motivariHTML = this.motivari
       .map((motivare) => this.createMotivareCard(motivare))
