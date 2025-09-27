@@ -138,15 +138,24 @@ class Dashboard {
       const elevId =
         this.currentUser.role === 'elev' ? this.currentUser.id : this.currentUser.elevId;
 
-      const { data: elevData, error } = await auth.supabase
-        .from('elevi')
-        .select('ore_personale_folosite')
-        .eq('id', elevId)
-        .single();
+      const response = await fetch('/.netlify/functions/get-motivari', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          elevId: elevId,
+          action: 'get-user-data',
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      this.currentUser.orePersonaleFolosite = elevData.ore_personale_folosite || 0;
+      if (result.success) {
+        this.currentUser.orePersonaleFolosite = result.data.ore_personale_folosite || 0;
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Eroare încărcare date utilizator:', error);
     }
@@ -157,17 +166,26 @@ class Dashboard {
       const elevId =
         this.currentUser.role === 'elev' ? this.currentUser.id : this.currentUser.elevId;
 
-      const { data, error } = await auth.supabase
-        .from('motivari')
-        .select('*')
-        .eq('elev_id', elevId)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/.netlify/functions/get-motivari', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          elevId: elevId,
+          action: 'get-motivari',
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      this.motivari = data || [];
-      this.displayMotivari();
-      this.updateStats();
+      if (result.success) {
+        this.motivari = result.data;
+        this.displayMotivari();
+        this.updateStats();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Eroare încărcare motivări:', error);
       this.showError('Eroare la încărcarea motivărilor');
@@ -284,17 +302,25 @@ class Dashboard {
         ore_scazute: oreScazute,
       };
 
-      // Inserează în baza de date
-      const { error } = await auth.supabase.from('motivari').insert(insertData);
+      // Trimite prin Netlify Function
+      const response = await fetch('/.netlify/functions/submit-motivare', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(insertData),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      this.showSuccess('Motivarea a fost trimisă cu succes!');
-      this.resetUploadForm();
-      await this.loadMotivari();
-
-      // Navighează la pagina motivări
-      this.switchPage('motivari');
+      if (result.success) {
+        this.showSuccess(result.message);
+        this.resetUploadForm();
+        await this.loadMotivari();
+        this.switchPage('motivari');
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Eroare salvare motivare:', error);
       this.showError('Eroare la trimiterea motivării');
@@ -594,12 +620,25 @@ class Dashboard {
     if (!confirm('Sigur vrei să ștergi această motivare?')) return;
 
     try {
-      const { error } = await auth.supabase.from('motivari').delete().eq('id', id);
+      const response = await fetch('/.netlify/functions/get-motivari', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete-motivare',
+          motivareId: id,
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      this.showSuccess('Motivarea a fost ștearsă');
-      await this.loadMotivari();
+      if (result.success) {
+        this.showSuccess('Motivarea a fost ștearsă');
+        await this.loadMotivari();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Eroare ștergere motivare:', error);
       this.showError('Eroare la ștergerea motivării');
