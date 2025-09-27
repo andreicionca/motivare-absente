@@ -6,6 +6,7 @@ class Dashboard {
     this.motivari = [];
     this.cereri = [];
     this.currentFilter = 'toate';
+    this.currentRotation = 0;
     this.selectedFile = null;
     this.init();
   }
@@ -614,11 +615,26 @@ class Dashboard {
     fileInput.click();
   }
 
+  rotateImage(degrees) {
+    this.currentRotation += degrees;
+    const img = document.getElementById('preview-img');
+    if (img) {
+      img.style.transform = `rotate(${this.currentRotation}deg)`;
+    }
+  }
+
   removeImage() {
     this.selectedFile = null;
+    this.currentRotation = 0; // Resetează rotația
     document.getElementById('image-preview-container').style.display = 'none';
     document.getElementById('upload-area').style.display = 'block';
     document.getElementById('file-input').value = '';
+
+    // Resetează transformarea imaginii
+    const img = document.getElementById('preview-img');
+    if (img) {
+      img.style.transform = '';
+    }
   }
 
   resetUploadForm() {
@@ -1056,6 +1072,7 @@ window.openGallery = () => dashboard.openGallery();
 window.removeImage = () => dashboard.removeImage();
 window.resetForm = () => dashboard.resetUploadForm();
 window.resetCerereForm = () => dashboard.resetCerereForm();
+window.rotateImage = (degrees) => dashboard.rotateImage(degrees);
 window.loadMotivari = () => {
   if (window.dashboard) {
     dashboard.loadMotivari();

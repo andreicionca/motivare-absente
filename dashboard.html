@@ -129,7 +129,25 @@
             <div class="image-preview-container" id="image-preview-container" style="display: none">
               <div class="image-preview-header">
                 <span>Document atașat</span>
-                <button type="button" class="remove-image-btn" onclick="removeImage()">×</button>
+                <div class="image-controls">
+                  <button
+                    type="button"
+                    class="rotate-btn"
+                    onclick="rotateImage(-90)"
+                    title="Rotește stânga"
+                  >
+                    ↺
+                  </button>
+                  <button
+                    type="button"
+                    class="rotate-btn"
+                    onclick="rotateImage(90)"
+                    title="Rotește dreapta"
+                  >
+                    ↻
+                  </button>
+                  <button type="button" class="remove-image-btn" onclick="removeImage()">×</button>
+                </div>
               </div>
               <div class="image-preview-wrapper">
                 <img id="preview-img" src="" alt="Preview document" />
