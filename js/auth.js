@@ -2,85 +2,71 @@
 
 class AuthSystem {
   constructor() {
-    this.supabase = null;
     this.currentUser = null;
     this.init();
   }
 
-  async init() {
-    try {
-      const { createClient } = supabase;
-      this.supabase = createClient(Config.SUPABASE_CONFIG.url, Config.SUPABASE_CONFIG.anonKey);
-
-      await this.checkCurrentUser();
-    } catch (error) {
-      console.error('Eroare inițializare Supabase:', error);
-    }
+  init() {
+    this.checkCurrentUser();
   }
 
-  // Autentificare diriginte (email + parolă)
+  // Autentificare diriginte
   async loginDiriginte(email, password) {
     try {
-      const { data, error } = await this.supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
+      const response = await fetch('/.netlify/functions/authenticate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'diriginte',
+          credentials: { email, password },
+        }),
       });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      const diriginte = await this.getDiriginteByEmail(email);
-      if (!diriginte) {
-        throw new Error('Nu sunteți înregistrat ca diriginte');
-      }
-
-      this.currentUser = {
-        id: data.user.id,
-        email: data.user.email,
-        role: 'diriginte',
-        nume: diriginte.nume,
-        prenume: diriginte.prenume,
-        clasa: diriginte.clasa,
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-      return { success: true, user: this.currentUser };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Autentificare elev/părinte (nume + cod personal - SIMPLIFICAT)
-  async loginUtilizator(nume, codPersonal, role) {
-    try {
-      let userData;
-
-      if (role === 'elev') {
-        userData = await this.getElevByCredentials(nume, codPersonal);
+      if (result.success) {
+        this.currentUser = result.user;
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+        return { success: true, user: this.currentUser };
       } else {
-        userData = await this.getParinteByCredentials(nume, codPersonal);
+        return { success: false, error: result.error };
       }
-
-      if (!userData) {
-        throw new Error('Nume sau cod incorect');
-      }
-
-      this.currentUser = {
-        id: userData.id,
-        role: role,
-        nume: userData.nume,
-        prenume: userData.prenume,
-        clasa: role === 'elev' ? userData.clasa : userData.elev.clasa,
-        elevId: role === 'parinte' ? userData.elev_id : userData.id,
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-      return { success: true, user: this.currentUser };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: 'Eroare de conectare' };
     }
   }
 
-  async checkCurrentUser() {
+  // Autentificare elev/părinte
+  async loginUtilizator(nume, cod, role) {
+    try {
+      const response = await fetch('/.netlify/functions/authenticate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: role,
+          credentials: { nume, cod },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.currentUser = result.user;
+        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+        return { success: true, user: this.currentUser };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      return { success: false, error: 'Eroare de conectare' };
+    }
+  }
+
+  checkCurrentUser() {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       this.currentUser = JSON.parse(savedUser);
@@ -89,52 +75,10 @@ class AuthSystem {
     return null;
   }
 
-  async logout() {
-    if (this.currentUser?.role === 'diriginte') {
-      await this.supabase.auth.signOut();
-    }
-
+  logout() {
     this.currentUser = null;
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
-  }
-
-  // Helper methods - ACTUALIZATE pentru nume + cod simplu
-  async getDiriginteByEmail(email) {
-    const { data, error } = await this.supabase
-      .from('diriginti')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    return error ? null : data;
-  }
-
-  async getElevByCredentials(nume, codPersonal) {
-    const { data, error } = await this.supabase
-      .from('elevi')
-      .select('*')
-      .eq('nume', nume)
-      .eq('cod_personal', codPersonal)
-      .single();
-
-    return error ? null : data;
-  }
-
-  async getParinteByCredentials(nume, codPersonal) {
-    const { data, error } = await this.supabase
-      .from('parinti')
-      .select(
-        `
-                *,
-                elev:elevi(id, nume, prenume, clasa)
-            `
-      )
-      .eq('nume', nume)
-      .eq('cod_personal', codPersonal)
-      .single();
-
-    return error ? null : data;
   }
 
   isAuthenticated() {
@@ -152,4 +96,5 @@ class AuthSystem {
   }
 }
 
+// Inițializare globală
 window.auth = new AuthSystem();

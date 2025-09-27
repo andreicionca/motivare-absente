@@ -1,17 +1,5 @@
 // js/config.js
 
-// Configurări pentru deployment pe Netlify
-// Valorile vor fi înlocuite automat cu Environment Variables
-const SUPABASE_CONFIG = {
-  url: 'SUPABASE_URL_PLACEHOLDER',
-  anonKey: 'SUPABASE_ANON_KEY_PLACEHOLDER',
-};
-
-const CLOUDINARY_CONFIG = {
-  cloudName: 'dwn9uyndj',
-  uploadPreset: 'motivari_upload', // Fără API key/secret pentru securitate
-};
-
 // Configurări aplicație
 const APP_CONFIG = {
   appName: 'Motivări Școlare',
@@ -19,9 +7,10 @@ const APP_CONFIG = {
   allowedFormats: ['jpg', 'jpeg', 'png', 'heic'],
   oreLucruZi: 6,
   oreLimitaPersonale: 42,
+  apiBase: '/.netlify/functions', // Base URL pentru functions
 };
 
-// Statusuri și tipuri (rămân la fel)
+// Statusuri motivări
 const STATUS_MOTIVARI = {
   IN_ASTEPTARE: 'in_asteptare',
   APROBATA: 'aprobata',
@@ -29,6 +18,7 @@ const STATUS_MOTIVARI = {
   FINALIZATA: 'finalizata',
 };
 
+// Tipuri motivări
 const TIPURI_MOTIVARI = {
   MEDICALA: 'medicala',
   INVOIRE_SCURTA_PERSONAL: 'invoire_scurta_personal',
@@ -36,10 +26,16 @@ const TIPURI_MOTIVARI = {
   INVOIRE_LUNGA: 'invoire_lunga',
 };
 
+// Cloudinary (public, safe în browser)
+const CLOUDINARY_CONFIG = {
+  cloudName: 'dwn9uyndj',
+  uploadPreset: 'motivari_upload',
+};
+
+// Export global
 window.Config = {
-  SUPABASE_CONFIG,
-  CLOUDINARY_CONFIG,
   APP_CONFIG,
   STATUS_MOTIVARI,
   TIPURI_MOTIVARI,
+  CLOUDINARY_CONFIG,
 };

@@ -1,0 +1,16 @@
+{
+  "name": "motivari-scolare",
+  "version": "1.0.0",
+  "description": "Sistem digital de gestiune motivări școlare",
+  "main": "index.js",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
