@@ -342,7 +342,7 @@ class Dashboard {
           ? 'Cererea va fi trimisă direct dirigintelui.'
           : 'Cererea va fi trimisă părintelui pentru aprobare.';
 
-      infoText.textContent = `${baseText} Orele NU se vor scădea cele 42 ore de învoire/an (învoire justificată).`;
+      infoText.textContent = `${baseText} Orele NU se vor scădea cele 42 ore de învoire/an.`;
       infoText.style.color = '#1e40af';
     }
 
