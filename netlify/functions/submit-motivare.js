@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
   try {
     const motivareData = JSON.parse(event.body);
 
-    // Validări
+    // Validări obligatorii
     if (!motivareData.elev_id || !motivareData.tip_motivare || !motivareData.perioada_inceput) {
       throw new Error('Date incomplete pentru motivare');
     }
@@ -38,20 +38,40 @@ exports.handler = async (event, context) => {
     // Inserează motivarea în baza de date
     const { data, error } = await supabase.from('motivari').insert(insertData).select().single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(`Eroare inserare motivare: ${error.message}`);
+    }
 
-    // Actualizează orele personale folosite pentru elev dacă sunt ore scăzute
-    if (insertData.ore_scazute > 0) {
-      const { error: updateError } = await supabase
+    // Actualizează orele personale folosite DOAR pentru invoirile lungi
+    if (insertData.ore_scazute > 0 && insertData.tip_motivare === 'invoire_lunga') {
+      // Citește orele curente ale elevului
+      const { data: elevData, error: fetchError } = await supabase
         .from('elevi')
-        .update({
-          ore_personale_folosite: supabase.sql`ore_personale_folosite + ${insertData.ore_scazute}`,
-        })
-        .eq('id', motivareData.elev_id);
+        .select('ore_personale_folosite')
+        .eq('id', motivareData.elev_id)
+        .single();
 
-      if (updateError) {
-        console.error('Eroare actualizare ore elev:', updateError);
-        // Nu aruncăm eroare aici pentru că motivarea s-a salvat deja
+      if (fetchError) {
+        console.error('Eroare citire ore elev:', fetchError);
+      } else {
+        // Calculează noile ore
+        const oreActuale = elevData.ore_personale_folosite || 0;
+        const oreNoi = oreActuale + insertData.ore_scazute;
+
+        // Actualizează orele în baza de date
+        const { error: updateError } = await supabase
+          .from('elevi')
+          .update({ ore_personale_folosite: oreNoi })
+          .eq('id', motivareData.elev_id);
+
+        if (updateError) {
+          console.error('Eroare actualizare ore elev:', updateError);
+          // Nu aruncăm eroare aici pentru că motivarea s-a salvat deja
+        } else {
+          console.log(
+            `Ore actualizate pentru elevul ${motivareData.elev_id}: ${oreActuale} -> ${oreNoi}`
+          );
+        }
       }
     }
 
