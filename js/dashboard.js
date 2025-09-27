@@ -661,41 +661,7 @@ class Dashboard {
 
   // Display motivări și cereri
   displayMotivari() {
-    const container = document.getElementById('motivari-list');
-    const emptyState = document.getElementById('motivari-empty');
-
-    if (!container) {
-      console.error('Element motivari-list nu există');
-      return;
-    }
-
-    // Combină motivări și cereri
-    const allItems = [
-      ...this.motivari.map((m) => ({ ...m, type: 'motivare' })),
-      ...this.cereri.map((c) => ({ ...c, type: 'cerere' })),
-    ];
-
-    // Sortează după data creării (cel mai recent primul)
-    allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    if (allItems.length === 0) {
-      container.innerHTML = '';
-      if (emptyState) {
-        emptyState.style.display = 'block';
-      }
-      return;
-    }
-
-    if (emptyState) {
-      emptyState.style.display = 'none';
-    }
-
-    const itemsHTML = allItems
-      .map((item) =>
-        item.type === 'motivare' ? this.createMotivareCard(item) : this.createCerereCard(item)
-      )
-      .join('');
-    container.innerHTML = itemsHTML;
+    this.filterMotivari();
   }
 
   createMotivareCard(motivare) {
@@ -847,8 +813,62 @@ class Dashboard {
   }
 
   filterMotivari() {
-    // Implementează filtrarea pentru ambele tipuri
-    this.displayMotivari(); // Pentru acum, afișează tot
+    const container = document.getElementById('motivari-list');
+    const emptyState = document.getElementById('motivari-empty');
+
+    if (!container) return;
+
+    // Combină motivări și cereri
+    const allItems = [
+      ...this.motivari.map((m) => ({ ...m, type: 'motivare' })),
+      ...this.cereri.map((c) => ({ ...c, type: 'cerere' })),
+    ];
+
+    // Filtrează pe baza selecției
+    let filteredItems = allItems;
+
+    if (this.currentFilter !== 'toate') {
+      filteredItems = allItems.filter((item) => {
+        // Pentru cereri, mapează statusurile specifice
+        if (item.type === 'cerere') {
+          switch (this.currentFilter) {
+            case 'in_asteptare':
+              return item.status === 'cerere_trimisa' || item.status === 'aprobata_parinte';
+            case 'aprobata':
+              return item.status === 'acceptata_diriginte';
+            case 'finalizata':
+            case 'respinsa':
+              return item.status === this.currentFilter;
+            default:
+              return true;
+          }
+        }
+        // Pentru motivări
+        return item.status === this.currentFilter;
+      });
+    }
+
+    // Sortează după data creării
+    filteredItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (filteredItems.length === 0) {
+      container.innerHTML = '';
+      if (emptyState) {
+        emptyState.style.display = 'block';
+      }
+      return;
+    }
+
+    if (emptyState) {
+      emptyState.style.display = 'none';
+    }
+
+    const itemsHTML = filteredItems
+      .map((item) =>
+        item.type === 'motivare' ? this.createMotivareCard(item) : this.createCerereCard(item)
+      )
+      .join('');
+    container.innerHTML = itemsHTML;
   }
 
   async deleteMotivare(id) {
@@ -1036,7 +1056,11 @@ window.openGallery = () => dashboard.openGallery();
 window.removeImage = () => dashboard.removeImage();
 window.resetForm = () => dashboard.resetUploadForm();
 window.resetCerereForm = () => dashboard.resetCerereForm();
-window.loadMotivari = () => dashboard.loadMotivari();
+window.loadMotivari = () => {
+  if (window.dashboard) {
+    dashboard.loadMotivari();
+  }
+};
 
 // Inițializare
 let dashboard;
