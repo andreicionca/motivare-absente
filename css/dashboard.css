@@ -825,12 +825,3 @@ body {
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   }
 }
-
-/* fix some padding/margin issues on very small screens */
-
-/* Pentru toate paginile mobile */
-@media (max-width: 768px) {
-  .page-content {
-    padding-bottom: 150px; /* Spațiu pentru tastatură */
-  }
-}
