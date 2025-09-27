@@ -209,17 +209,35 @@ class Dashboard {
   }
 
   updateStats() {
-    const oreRamase =
-      Config.APP_CONFIG.oreLimitaPersonale - (this.currentUser.orePersonaleFolosite || 0);
+    const orePersonaleFolosite = this.cereri
+      .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
+      .reduce((total, c) => total + (c.ore_scazute || 0), 0);
+
+    const oreRamase = Config.APP_CONFIG.oreLimitaPersonale - orePersonaleFolosite;
 
     const totalMotivari = this.motivari.length + this.cereri.length;
     const inAsteptare =
       this.motivari.filter((m) => m.status === 'in_asteptare').length +
       this.cereri.filter((c) => c.status === 'cerere_trimisa' || c.status === 'aprobata_parinte')
         .length;
+    // Calculează orele de absență motivată
     const absenteMotivate =
-      this.motivari.filter((m) => m.status === 'finalizata').length +
-      this.cereri.filter((c) => c.status === 'finalizata').length;
+      this.motivari
+        .filter((m) => m.status === 'finalizata')
+        .reduce((total, m) => {
+          // Pentru motivări, calculează zilele și înmulțește cu 6 ore/zi
+          const startDate = new Date(m.perioada_inceput);
+          const endDate = new Date(m.perioada_sfarsit || m.perioada_inceput);
+          let zileScolare = 0;
+          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const ziua = d.getDay();
+            if (ziua >= 1 && ziua <= 5) zileScolare++;
+          }
+          return total + zileScolare * 6;
+        }, 0) +
+      this.cereri
+        .filter((c) => c.status === 'finalizata')
+        .reduce((total, c) => total + (c.ore_solicitate || 0), 0);
 
     // Actualizează UI
     document.getElementById('ore-ramase').textContent = oreRamase;
