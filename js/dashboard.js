@@ -210,9 +210,13 @@ class Dashboard {
   }
 
   updateStats() {
-    const orePersonaleFolosite = this.cereri
-      .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
-      .reduce((total, c) => total + (c.ore_scazute || 0), 0);
+    const orePersonaleFolosite =
+      this.cereri
+        .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
+        .reduce((total, c) => total + (c.ore_scazute || 0), 0) +
+      this.motivari
+        .filter((m) => m.tip_motivare === 'invoire_lunga' && m.status === 'finalizata')
+        .reduce((total, m) => total + (m.ore_scazute || 0), 0);
 
     const oreRamase = Config.APP_CONFIG.oreLimitaPersonale - orePersonaleFolosite;
 
@@ -312,9 +316,13 @@ class Dashboard {
     tipInput.value = tip;
 
     // Calculează orele personale folosite dinamic din cereri
-    const orePersonaleFolosite = this.cereri
-      .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
-      .reduce((total, c) => total + (c.ore_scazute || 0), 0);
+    const orePersonaleFolosite =
+      this.cereri
+        .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
+        .reduce((total, c) => total + (c.ore_scazute || 0), 0) +
+      this.motivari
+        .filter((m) => m.tip_motivare === 'invoire_lunga' && m.status === 'finalizata')
+        .reduce((total, m) => total + (m.ore_scazute || 0), 0);
 
     const oreRamase = Config.APP_CONFIG.oreLimitaPersonale - orePersonaleFolosite;
 
