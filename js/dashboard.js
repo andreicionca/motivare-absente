@@ -328,7 +328,7 @@ class Dashboard {
           ? 'Cererea va fi trimisă direct dirigintelui.'
           : 'Cererea va fi trimisă părintelui pentru aprobare.';
 
-      infoText.textContent = `${baseText} Orele se vor scădea din cele totalul orelor permise de regulament pentru învoirea la cerere a elevului. Mai aveți ${oreRamase} ore personale disponibile.`;
+      infoText.textContent = `${baseText} Orele se vor scădea din totalul orelor permise de regulament pentru învoirea la cerere a elevului într-un an școlar. Mai aveți ${oreRamase} ore personale disponibile.`;
 
       // Adaugă styling pentru avertisment dacă sunt puține ore
       if (oreRamase <= 5) {
@@ -342,7 +342,7 @@ class Dashboard {
           ? 'Cererea va fi trimisă direct dirigintelui.'
           : 'Cererea va fi trimisă părintelui pentru aprobare.';
 
-      infoText.textContent = `${baseText} Orele NU se vor scădea (învoire justificată).`;
+      infoText.textContent = `${baseText} Orele NU se vor scădea cele 42 ore de învoire/an (învoire justificată).`;
       infoText.style.color = '#1e40af';
     }
 
