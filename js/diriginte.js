@@ -563,7 +563,7 @@ class Diriginte {
     try {
       this.showLoading(true);
 
-      const response = await fetch('/.netlify/functions/finalize-motivari', {
+      const response = await fetch('/.netlify/functions/finalizeaza-motivari', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
