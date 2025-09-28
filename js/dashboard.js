@@ -329,7 +329,7 @@ class Dashboard {
     // Actualizează textul informativ în funcție de rol și ore disponibile
     const infoText = document.getElementById('cerere-info-text');
     if (tip === 'personal') {
-      infoText.textContent = `Cererea va fi trimisă dirigintelui. Orele se vor scădea din cele 42 permise anual. Mai aveți ${oreRamase} ore personale disponibile.`;
+      infoText.textContent = `Cererea va fi trimisă dirigintelui. Orele se vor scădea din cele 42 permise anual. Mai aveți ${oreRamase} ore de învoire personală disponibile.`;
 
       if (oreRamase <= 5) {
         infoText.style.color = '#ef4444';
@@ -707,7 +707,7 @@ class Dashboard {
 
     const tipTexts = {
       medicala_clasica: '🏥 Medicală',
-      invoire_lunga: '📅 Învoire de la părinte',
+      invoire_lunga: '📅 Cerere de învoire de la părinte',
       alte_motive: '📋 Alte motive',
     };
 
@@ -784,7 +784,7 @@ class Dashboard {
     };
 
     const tipTexts = {
-      personal: '👤 Învoire personală',
+      personal: '👤 Problemă personală',
       invoire_justificata: '📋 Învoire justificată',
     };
 
@@ -991,7 +991,7 @@ class Dashboard {
   getTipTextMotivare(tip) {
     const tipTexts = {
       medicala_clasica: 'Medicală',
-      invoire_lunga: 'Învoire de la părinte',
+      invoire_lunga: 'Cerere de învoire de la părinte',
       alte_motive: 'Alte motive',
     };
     return tipTexts[tip] || tip;
@@ -999,7 +999,7 @@ class Dashboard {
 
   getTipTextCerere(tip) {
     const tipTexts = {
-      personal: 'Învoire personală',
+      personal: 'Problemă personală',
       invoire_justificata: 'Învoire justificată',
     };
     return tipTexts[tip] || tip;

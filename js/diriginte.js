@@ -385,7 +385,7 @@ class Diriginte {
       invoire_lunga: '📅 Învoire Lungă',
       alte_motive: '📋 Alte Motive',
       // Pentru cereri
-      personal: '👤 Învoire personală',
+      personal: '👤 Problemă personală',
       invoire_justificata: '📋 Învoire justificată',
     };
 
