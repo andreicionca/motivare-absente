@@ -500,15 +500,13 @@ body {
 }
 
 /* Checkbox pentru selectare */
+/* Checkbox pentru selectare */
 .solicitare-checkbox {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   width: 20px;
   height: 20px;
   accent-color: #2563eb;
   cursor: pointer;
-  margin-left: 0.5rem; /* Împinge badge-ul la stânga */
+  flex-shrink: 0; /* Previne comprimarea checkbox-ului */
 }
 
 /* Filters */
