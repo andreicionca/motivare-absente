@@ -380,114 +380,114 @@ class Diriginte {
     };
 
     const tipTexts = {
-      // Pentru motivări
       medicala_clasica: '🏥 Medicală',
       invoire_lunga: '📅 Învoire Lungă',
       alte_motive: '📋 Alte Motive',
-      // Pentru cereri
       personal: '👤 Problemă personală',
       invoire_justificata: '📋 Învoire justificată',
     };
 
-    // Determină dacă poate fi procesat
     const canProcess = item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
-
-    // Determină dacă poate fi selectat pentru finalizare
     const canSelect = item.status === 'aprobata' || item.status === 'acceptata_diriginte';
 
-    // Generează acțiuni în funcție de context
+    // Acțiuni pentru butoane (pending)
     let actionsHTML = '';
-
     if (context === 'pending' && canProcess) {
       actionsHTML = `
-        <div class="card-actions">
-          <button class="card-btn reject-btn" onclick="diriginte.quickReject('${item.type}', ${item.id})">
-            Respinge
-          </button>
-          <button class="card-btn approve-btn" onclick="diriginte.quickApprove('${item.type}', ${item.id})">
-            Aprobă
-          </button>
-        </div>
-      `;
-    } else if (context === 'approved' && canSelect) {
-      actionsHTML = `
-        <input type="checkbox" class="solicitare-checkbox"
-               onchange="diriginte.toggleItemSelection('${item.type}', ${item.id}, this.checked)">
-      `;
+      <div class="card-actions">
+        <button class="card-btn reject-btn" onclick="event.stopPropagation(); diriginte.quickReject('${item.type}', ${item.id})">
+          Respinge
+        </button>
+        <button class="card-btn approve-btn" onclick="event.stopPropagation(); diriginte.quickApprove('${item.type}', ${item.id})">
+          Aprobă
+        </button>
+      </div>
+    `;
     }
 
-    // Generează conținut specific tipului
-    let contentHTML = '';
+    // Checkbox pentru selecție (approved) - va fi în header
+    const checkboxHTML =
+      context === 'approved' && canSelect
+        ? `
+    <input type="checkbox" class="solicitare-checkbox"
+           onclick="event.stopPropagation()"
+           onchange="diriginte.toggleItemSelection('${item.type}', ${item.id}, this.checked)">
+  `
+        : '';
 
+    // Conținut specific tipului
+    let contentHTML = '';
     if (item.type === 'motivare') {
       contentHTML = `
-        <div class="perioada">
-          <strong>Perioada:</strong>
-          ${this.formatDate(item.perioada_inceput)}
-          ${item.perioada_sfarsit ? ` - ${this.formatDate(item.perioada_sfarsit)}` : ''}
+      <div class="perioada">
+        <strong>Perioada:</strong>
+        ${this.formatDate(item.perioada_inceput)}
+        ${item.perioada_sfarsit ? ` - ${this.formatDate(item.perioada_sfarsit)}` : ''}
+      </div>
+      ${item.motiv ? `<div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>` : ''}
+      ${
+        item.ore_scazute > 0
+          ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
+          : ''
+      }
+      ${
+        item.url_imagine
+          ? `
+        <div class="card-image-container">
+          <img src="${item.url_imagine}" alt="Document motivare" loading="lazy" />
         </div>
-        ${item.motiv ? `<div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>` : ''}
-        ${
-          item.ore_scazute > 0
-            ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
-            : ''
-        }
-        ${
-          item.url_imagine
-            ? `
-          <div class="card-image-container">
-            <img src="${item.url_imagine}" alt="Document motivare" loading="lazy" />
-          </div>
-        `
-            : ''
-        }
-      `;
+      `
+          : ''
+      }
+    `;
     } else {
-      // Cerere
       contentHTML = `
-        <div class="perioada">
-          <strong>Data:</strong> ${this.formatDate(item.data_solicitata)}
-          <br><strong>Ore:</strong> ${item.ora_inceput} - ${item.ora_sfarsit} (${
+      <div class="perioada">
+        <strong>Data:</strong> ${this.formatDate(item.data_solicitata)}
+        <br><strong>Ore:</strong> ${item.ora_inceput} - ${item.ora_sfarsit} (${
         item.ore_solicitate
       }h)
-        </div>
-        <div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>
-        ${
-          item.ore_scazute > 0
-            ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
-            : ''
-        }
-      `;
+      </div>
+      <div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>
+      ${
+        item.ore_scazute > 0
+          ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
+          : ''
+      }
+    `;
     }
 
     const tipKey = item.type === 'motivare' ? item.tip_motivare : item.tip_cerere;
 
     return `
-      <div class="solicitare-card ${item.status}" onclick="diriginte.viewSolicitare('${
-      item.type
-    }', ${item.id})">
-        ${actionsHTML}
+    <div class="solicitare-card ${item.status}" onclick="diriginte.viewSolicitare('${item.type}', ${
+      item.id
+    })">
+      ${actionsHTML}
 
-        <div class="card-header">
-          <div class="student-info">
-            <div class="student-name">${item.elev_nume} ${item.elev_prenume}</div>
-            <div class="solicitare-tip">${tipTexts[tipKey] || tipKey}</div>
-          </div>
+      <div class="card-header">
+        <div class="student-info">
+          <div class="student-name">${item.elev_nume} ${item.elev_prenume}</div>
+          <div class="solicitare-tip">${tipTexts[tipKey] || tipKey}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          ${checkboxHTML}
           <div class="status-badge" style="background: ${statusColors[item.status]};">
             ${statusTexts[item.status]}
           </div>
         </div>
-
-        <div class="card-content">
-          ${contentHTML}
-        </div>
-
-        <div class="card-footer">
-          <small>Trimis la: ${this.formatDateTime(item.created_at)}</small>
-          <small>de: ${item.trimis_de === 'elev' ? 'Elev' : 'Părinte'}</small>
-        </div>
       </div>
-    `;
+
+      <div class="card-content">
+        ${contentHTML}
+      </div>
+
+      <div class="card-footer">
+        <small>Trimis la: ${this.formatDateTime(item.created_at)}</small>
+        <small>de: ${item.trimis_de === 'elev' ? 'Elev' : 'Părinte'}</small>
+      </div>
+    </div>
+  `;
   }
 
   async quickApprove(type, itemId) {
