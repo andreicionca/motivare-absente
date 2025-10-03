@@ -1080,11 +1080,35 @@ class Diriginte {
         ...cereriElev.filter((c) => c.status === 'finalizata'),
       ].length;
 
-      // Calculează total ore motivate (suma ore_scazute din motivările finalizate)
-      const oreMotivate = [
-        ...motivariElev.filter((m) => m.status === 'finalizata'),
-        ...cereriElev.filter((c) => c.status === 'finalizata'),
-      ].reduce((sum, item) => sum + (item.ore_scazute || 0), 0);
+      // Calculează total ore motivate (absențe justificate)
+      let oreMotivate = 0;
+
+      // Pentru motivări
+      motivariElev
+        .filter((m) => m.status === 'finalizata')
+        .forEach((m) => {
+          if (m.tip_motivare === 'medicala_clasica' || m.tip_motivare === 'alte_motive') {
+            // Calculează zilele școlare
+            const startDate = new Date(m.perioada_inceput);
+            const endDate = new Date(m.perioada_sfarsit || m.perioada_inceput);
+            let zileScolare = 0;
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+              const ziua = d.getDay();
+              if (ziua >= 1 && ziua <= 5) zileScolare++;
+            }
+            oreMotivate += zileScolare * 6;
+          } else if (m.tip_motivare === 'invoire_lunga') {
+            // Pentru învoire lungă, folosim ore_scazute deja calculat
+            oreMotivate += m.ore_scazute || 0;
+          }
+        });
+
+      // Pentru cereri
+      cereriElev
+        .filter((c) => c.status === 'finalizata')
+        .forEach((c) => {
+          oreMotivate += c.ore_solicitate || 0;
+        });
 
       const oreRamase = 42 - (elev.ore_personale_folosite || 0);
 
@@ -1105,7 +1129,7 @@ class Diriginte {
     const totalMotivatePeClasa = eleviCuStatistici.reduce((sum, e) => sum + e.motivate, 0);
     const totalOreMotivatePeClasa = eleviCuStatistici.reduce((sum, e) => sum + e.oreMotivate, 0);
 
-    // Card cu totaluri pe clasă
+    // Restul codului rămâne la fel...
     const totaluriHTML = `
     <div class="clasa-totals-card">
       <h3>📊 Statistici Clasă ${this.currentUser.clasa}</h3>
@@ -1161,12 +1185,6 @@ class Diriginte {
     container.innerHTML = totaluriHTML + eleviHTML;
   }
 
-  viewDetaliiElev(elevId) {
-    this.currentElevId = elevId;
-    this.switchPage('detalii-elev');
-    this.displayDetaliiElev(elevId);
-  }
-
   displayDetaliiElev(elevId) {
     const elev = this.elevi.find((e) => e.id === elevId);
     if (!elev) return;
@@ -1184,27 +1202,48 @@ class Diriginte {
     const oreRamase = 42 - (elev.ore_personale_folosite || 0);
     const motivate = allItems.filter((item) => item.status === 'finalizata').length;
 
-    // Calculează total ore motivate
-    const oreMotivate = allItems
-      .filter((item) => item.status === 'finalizata')
-      .reduce((sum, item) => sum + (item.ore_scazute || 0), 0);
+    // Calculează total ore motivate (absențe justificate)
+    let oreMotivate = 0;
+
+    motivariElev
+      .filter((m) => m.status === 'finalizata')
+      .forEach((m) => {
+        if (m.tip_motivare === 'medicala_clasica' || m.tip_motivare === 'alte_motive') {
+          const startDate = new Date(m.perioada_inceput);
+          const endDate = new Date(m.perioada_sfarsit || m.perioada_inceput);
+          let zileScolare = 0;
+          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const ziua = d.getDay();
+            if (ziua >= 1 && ziua <= 5) zileScolare++;
+          }
+          oreMotivate += zileScolare * 6;
+        } else if (m.tip_motivare === 'invoire_lunga') {
+          oreMotivate += m.ore_scazute || 0;
+        }
+      });
+
+    cereriElev
+      .filter((c) => c.status === 'finalizata')
+      .forEach((c) => {
+        oreMotivate += c.ore_solicitate || 0;
+      });
 
     const totalSolicitari = allItems.length;
 
     document.getElementById('elev-ore-ramase').textContent = oreRamase;
     document.getElementById('elev-motivate').textContent = motivate;
-    document.getElementById('elev-ore-motivate').textContent = oreMotivate; // nou
+    document.getElementById('elev-ore-motivate').textContent = oreMotivate;
     document.getElementById('elev-total').textContent = totalSolicitari;
 
     const container = document.getElementById('detalii-elev-feed');
 
     if (allItems.length === 0) {
       container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📝</div>
-          <p>Nu sunt solicitări pentru acest elev</p>
-        </div>
-      `;
+      <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <p>Nu sunt solicitări pentru acest elev</p>
+      </div>
+    `;
       return;
     }
 
