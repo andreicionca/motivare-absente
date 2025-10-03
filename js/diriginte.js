@@ -716,32 +716,214 @@ class Diriginte {
   }
 
   generateExportText(items) {
-    let text = `Motivări pentru catalogul electronic - Clasa ${this.currentUser.clasa}\n`;
-    text += `Generat la: ${new Date().toLocaleDateString('ro-RO')}\n\n`;
-
-    items.forEach((item, index) => {
-      text += `${index + 1}. ${item.elev_nume} ${item.elev_prenume}\n`;
-
+    // Generează array-ul absenceConfig
+    const absenceConfigArray = items.map((item) => {
+      // Determină reasonType pe baza tipului
+      let reasonType;
       if (item.type === 'motivare') {
-        text += `   Tip: ${this.getTipTextMotivare(item.tip_motivare)}\n`;
-        text += `   Perioada: ${this.formatDate(item.perioada_inceput)}`;
-        if (item.perioada_sfarsit) {
-          text += ` - ${this.formatDate(item.perioada_sfarsit)}`;
+        switch (item.tip_motivare) {
+          case 'medicala_clasica':
+            reasonType = '1'; // Scutire medicală
+            break;
+          case 'invoire_lunga':
+            reasonType = '0'; // Invoire parinte
+            break;
+          case 'alte_motive':
+            reasonType = '2'; // Alt motiv
+            break;
+          default:
+            reasonType = '2';
         }
-        text += `\n`;
       } else {
-        text += `   Tip: ${this.getTipTextCerere(item.tip_cerere)}\n`;
-        text += `   Data: ${this.formatDate(item.data_solicitata)}\n`;
-        text += `   Ore: ${item.ora_inceput} - ${item.ora_sfarsit} (${item.ore_solicitate}h)\n`;
+        // cerere
+        switch (item.tip_cerere) {
+          case 'personal':
+            reasonType = '0'; // Invoire parinte
+            break;
+          case 'invoire_justificata':
+            reasonType = '2'; // Alt motiv
+            break;
+          default:
+            reasonType = '2';
+        }
       }
 
-      if (item.motiv) {
-        text += `   Motiv: ${item.motiv}\n`;
+      // Determină datele de început și sfârșit
+      let startDate, endDate;
+      if (item.type === 'motivare') {
+        startDate = this.formatDateForScript(item.perioada_inceput);
+        endDate = item.perioada_sfarsit
+          ? this.formatDateForScript(item.perioada_sfarsit)
+          : this.formatDateForScript(item.perioada_inceput);
+      } else {
+        startDate = this.formatDateForScript(item.data_solicitata);
+        endDate = this.formatDateForScript(item.data_solicitata);
       }
-      text += `\n`;
+
+      // Determină motivul
+      let reason = item.motiv || 'motivare absență';
+
+      return {
+        studentName: `${item.elev_nume} ${item.elev_prenume}`,
+        startDate: startDate,
+        endDate: endDate,
+        reason: reason,
+        reasonType: reasonType,
+      };
     });
 
-    return text;
+    // Generează script-ul complet
+    const scriptText = `(function () {
+  console.log("Script pornit.");
+  const absenceConfig = ${JSON.stringify(absenceConfigArray, null, 4)};
+
+  function motivateStudent(index) {
+    if (index >= absenceConfig.length) {
+      console.log("Toți elevii au fost procesați.");
+      return;
+    }
+
+    const config = absenceConfig[index];
+    console.log(\`Încep procesarea elevului: \${config.studentName}\`);
+
+    var button = document.querySelector("a.btn-quick-excuse");
+    if (button) {
+      console.log('Butonul "Motivare rapida absente" a fost găsit.');
+      button.click();
+
+      setTimeout(function () {
+        var selectElement = $("#id_quick_excuse-student");
+
+        if (selectElement.length) {
+          console.log(
+            "Elementul select a fost găsit. Încerc să deschid lista..."
+          );
+
+          selectElement.select2("open");
+
+          setTimeout(function () {
+            console.log("Dropdown-ul a fost deschis. Verific opțiunile...");
+            var dropdownOptions = $(".select2-results__option");
+
+            if (dropdownOptions.length) {
+              console.log("Încerc să selectez:", config.studentName);
+
+              dropdownOptions.each(function (idx, option) {
+                if ($(option).text().trim() === config.studentName) {
+                  $(option).trigger("mouseup");
+                  console.log(
+                    \`Opțiunea "\${config.studentName}" a fost selectată.\`
+                  );
+
+                  setTimeout(function () {
+                    var startDateInput = document.querySelector(
+                      "#id_quick_excuse-start_date"
+                    );
+                    var endDateInput = document.querySelector(
+                      "#id_quick_excuse-end_date"
+                    );
+                    var reasonTextarea = document.querySelector(
+                      "#id_quick_excuse-change_reason"
+                    );
+                    var reasonTypeSelect = $("#id_quick_excuse-reason_type");
+
+                    if (startDateInput && endDateInput && reasonTextarea && reasonTypeSelect.length) {
+                      startDateInput.value = config.startDate;
+                      endDateInput.value = config.endDate;
+                      reasonTextarea.value = config.reason;
+
+                      reasonTypeSelect.val(config.reasonType).trigger('change');
+
+                      console.log(
+                        \`Date completate - Perioada: \${config.startDate} - \${config.endDate}, Tip: \${config.reasonType}\`
+                      );
+
+                      setTimeout(function () {
+                        var saveButton = document.querySelector(
+                          "button.btn-save-excuses"
+                        );
+                        if (saveButton) {
+                          if (
+                            saveButton.getAttribute("disabled") !== null ||
+                            saveButton.classList.contains("disabled")
+                          ) {
+                            console.log(
+                              \`\${config.studentName} nu are absențe în perioada \${config.startDate} - \${config.endDate}. Trec la următorul elev.\`
+                            );
+                            var modalButton = document.querySelector(
+                              '.modal.show button[data-dismiss="modal"]'
+                            );
+                            if (modalButton) {
+                              modalButton.click();
+                              console.log("Fereastra a fost închisă.");
+                              setTimeout(function () {
+                                motivateStudent(index + 1);
+                              }, 4000);
+                            }
+                          } else {
+                            saveButton.click();
+                            console.log(
+                              'Butonul "Motivează absențe" a fost apăsat.'
+                            );
+
+                            setTimeout(function () {
+                              var modalButton = document.querySelector(
+                                '.modal.show button[data-dismiss="modal"]'
+                              );
+                              if (modalButton) {
+                                modalButton.click();
+                                console.log("Fereastra a fost închisă.");
+                              } else {
+                                console.error(
+                                  "Butonul de închidere nu a fost găsit!"
+                                );
+                              }
+
+                              setTimeout(function () {
+                                motivateStudent(index + 1);
+                              }, 4000);
+                            }, 4000);
+                          }
+                        } else {
+                          console.error(
+                            'Butonul "Motivează absențe" nu a fost găsit!'
+                          );
+                        }
+                      }, 3000);
+                    } else {
+                      console.error(
+                        "Nu s-au găsit câmpurile pentru date și motiv!"
+                      );
+                    }
+                  }, 3000);
+                }
+              });
+            } else {
+              console.error("Nicio opțiune găsită în dropdown!");
+            }
+          }, 3000);
+        } else {
+          console.error("Dropdown-ul pentru elevi nu a fost găsit!");
+        }
+      }, 3000);
+    } else {
+      console.error('Butonul "Motivare rapida absente" nu a fost găsit!');
+    }
+  }
+
+  motivateStudent(0);
+})();`;
+
+    return scriptText;
+  }
+
+  // Adaugă funcția auxiliară pentru formatarea datei în format DD.MM.YYYY
+  formatDateForScript(dateString) {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
   }
 
   async finalizeSelected() {
