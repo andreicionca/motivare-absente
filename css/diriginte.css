@@ -149,6 +149,8 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .page-header h2 {
@@ -172,6 +174,21 @@ body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.back-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.back-btn:hover {
+  background: #e5e7eb;
 }
 
 .refresh-btn,
@@ -241,6 +258,18 @@ body {
 .stat-card.finalized {
   border-left-color: #2563eb;
 }
+.stat-card.primary {
+  border-left-color: #2563eb;
+}
+.stat-card.success {
+  border-left-color: #059669;
+}
+.stat-card.warning {
+  border-left-color: #d97706;
+}
+.stat-card.info {
+  border-left-color: #06b6d4;
+}
 
 .stat-icon {
   font-size: 1.5rem;
@@ -262,6 +291,14 @@ body {
 .stat-info p {
   font-size: 0.8rem;
   color: #6b7280;
+}
+
+/* Elev Stats Grid */
+.elev-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 /* Quick Actions */
@@ -363,12 +400,14 @@ body {
 }
 
 .solicitare-card.pending,
-.solicitare-card.cerere_trimisa {
+.solicitare-card.cerere_trimisa,
+.solicitare-card.in_asteptare {
   border-left-color: #d97706;
 }
 
 .solicitare-card.approved,
-.solicitare-card.acceptata_diriginte {
+.solicitare-card.acceptata_diriginte,
+.solicitare-card.aprobata {
   border-left-color: #059669;
 }
 
@@ -387,7 +426,7 @@ body {
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 1rem;
-  gap: 0.5rem; /* Simplu gap între elemente */
+  gap: 0.5rem;
 }
 
 .student-info {
@@ -440,6 +479,12 @@ body {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.card-image-container:hover {
+  opacity: 0.9;
 }
 
 .card-image-container img {
@@ -467,6 +512,7 @@ body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
 .card-btn {
@@ -500,43 +546,12 @@ body {
 }
 
 /* Checkbox pentru selectare */
-/* Checkbox pentru selectare */
 .solicitare-checkbox {
   width: 20px;
   height: 20px;
   accent-color: #2563eb;
   cursor: pointer;
-  flex-shrink: 0; /* Previne comprimarea checkbox-ului */
-}
-
-/* Filters */
-.filters {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-}
-
-.filter-btn {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.filter-btn.active {
-  background: #dc2626;
-  color: white;
-  border-color: #dc2626;
-}
-
-.filter-btn:hover:not(.active) {
-  background: #e5e7eb;
+  flex-shrink: 0;
 }
 
 /* Type Filters */
@@ -579,6 +594,59 @@ body {
   border-color: #d1d5db;
 }
 
+/* Elevi List */
+.elevi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.elev-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 4px solid #2563eb;
+}
+
+.elev-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.elev-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.elev-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #1f2937;
+}
+
+.elev-stats-inline {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.elev-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.elev-stat-item strong {
+  color: #1f2937;
+}
+
 /* Bottom Navigation */
 .bottom-nav {
   position: fixed;
@@ -590,10 +658,12 @@ body {
   display: flex;
   padding: 0.5rem 0;
   z-index: 1000;
+  overflow-x: auto;
 }
 
 .nav-item {
   flex: 1;
+  min-width: 60px;
   background: none;
   border: none;
   padding: 0.5rem;
@@ -658,17 +728,48 @@ body {
   overflow-y: auto;
 }
 
+/* Image Modal specific */
+.modal-content.image-modal {
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
+  gap: 1rem;
 }
 
 .modal-header h3 {
   font-size: 1.2rem;
   font-weight: 600;
+}
+
+.image-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rotate-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.rotate-btn:hover {
+  background: #e5e7eb;
 }
 
 .close-btn {
@@ -683,6 +784,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
@@ -698,6 +800,12 @@ body {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.modal-image-container:hover {
+  opacity: 0.9;
 }
 
 .modal-image-container img {
@@ -707,6 +815,24 @@ body {
   max-height: 400px;
   object-fit: contain;
   background: #f8fafc;
+}
+
+/* Modal Image Wrapper pentru full-size view */
+.modal-image-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.modal-image-wrapper img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  transition: transform 0.3s ease;
 }
 
 .modal-actions {
@@ -742,6 +868,29 @@ body {
 
 .btn-danger:hover {
   background: #dc2626;
+}
+
+/* Solicitare Details */
+.solicitare-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detail-row {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detail-row strong {
+  color: #374151;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 /* Export Modal */
@@ -834,6 +983,10 @@ body {
     gap: 1.5rem;
   }
 
+  .elev-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   .action-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -846,6 +999,10 @@ body {
 
   .modal-content {
     max-width: 600px;
+  }
+
+  .modal-content.image-modal {
+    max-width: 80vw;
   }
 
   .card-image-container img {
@@ -872,9 +1029,14 @@ body {
     max-width: 700px;
   }
 
+  .modal-content.image-modal {
+    max-width: 70vw;
+  }
+
   .card-image-container img {
     max-height: 500px;
   }
+
   .bottom-nav {
     max-width: 800px;
     left: 50%;

@@ -16,8 +16,9 @@ exports.handler = async (event, context) => {
     // Obține elevii din clasa dirigintelui
     const { data: elevi, error: eleviError } = await supabase
       .from('elevi')
-      .select('id, nume, prenume')
-      .eq('clasa', clasa);
+      .select('id, nume, prenume, ore_personale_folosite')
+      .eq('clasa', clasa)
+      .order('nume', { ascending: true });
 
     if (eleviError) throw eleviError;
 
@@ -28,13 +29,31 @@ exports.handler = async (event, context) => {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
-          data: action === 'get-all-data' ? { motivari: [], cereri: [] } : [],
+          data:
+            action === 'get-all-data'
+              ? { motivari: [], cereri: [] }
+              : action === 'get-elevi'
+              ? { elevi: [] }
+              : [],
         }),
       };
     }
 
+    // Acțiune: get-elevi - returnează lista de elevi
+    if (action === 'get-elevi') {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          data: {
+            elevi: elevi,
+          },
+        }),
+      };
+    }
+
+    // Acțiune: get-all-data - returnează motivări și cereri
     if (action === 'get-all-data') {
-      // Încarcă atât motivări cât și cereri
       const [motivariResult, cereriResult] = await Promise.all([
         supabase
           .from('motivari')

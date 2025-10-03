@@ -5,10 +5,12 @@ class Diriginte {
     this.currentUser = null;
     this.motivari = [];
     this.cereri = [];
+    this.elevi = [];
     this.selectedItems = new Set();
-    this.currentFilter = 'toate';
     this.currentTypeFilter = 'toate';
     this.currentItem = null;
+    this.currentElevId = null;
+    this.modalImageRotation = 0;
     this.init();
   }
 
@@ -64,6 +66,14 @@ class Diriginte {
       targetPage.classList.add('active');
     }
 
+    // Actualizează bottom nav
+    document.querySelectorAll('.nav-item').forEach((nav) => {
+      nav.classList.remove('active');
+      if (nav.dataset.page === page) {
+        nav.classList.add('active');
+      }
+    });
+
     // Logica specifică pentru fiecare pagină
     switch (page) {
       case 'dashboard':
@@ -81,20 +91,18 @@ class Diriginte {
       case 'all':
         this.displayAllSolicitari();
         break;
+      case 'statistici-elevi':
+        this.loadStatisticiElevi();
+        break;
+      case 'detalii-elev':
+        if (this.currentElevId) {
+          this.displayDetaliiElev(this.currentElevId);
+        }
+        break;
     }
   }
 
   setupEventListeners() {
-    // Filtre status pentru pagina "toate"
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.currentFilter = btn.dataset.filter;
-        this.updateFilterButtons();
-        this.filterAllSolicitari();
-      });
-    });
-
     // Filtre tipuri pentru pagina "toate"
     const typeFilterBtns = document.querySelectorAll('.type-filter-btn');
     typeFilterBtns.forEach((btn) => {
@@ -110,6 +118,7 @@ class Diriginte {
       if (e.target.classList.contains('modal-overlay')) {
         this.closeModal();
         this.closeExportModal();
+        this.closeImageModal();
       }
     });
   }
@@ -311,35 +320,15 @@ class Diriginte {
 
     let filteredItems = allItems;
 
-    // Filtrare după status
-    if (this.currentFilter !== 'toate') {
-      filteredItems = filteredItems.filter((item) => {
-        if (this.currentFilter === 'in_asteptare') {
-          return item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
-        }
-        if (this.currentFilter === 'aprobata') {
-          return item.status === 'aprobata' || item.status === 'acceptata_diriginte';
-        }
-        return item.status === this.currentFilter;
-      });
-    }
-
     // Filtrare după tip
     if (this.currentTypeFilter !== 'toate') {
-      if (this.currentTypeFilter === 'motivari') {
-        filteredItems = filteredItems.filter((item) => item.type === 'motivare');
-      } else if (this.currentTypeFilter === 'cereri') {
-        filteredItems = filteredItems.filter((item) => item.type === 'cerere');
-      } else {
-        // Filtrare după tip specific
-        filteredItems = filteredItems.filter((item) => {
-          if (item.type === 'motivare') {
-            return item.tip_motivare === this.currentTypeFilter;
-          } else {
-            return item.tip_cerere === this.currentTypeFilter;
-          }
-        });
-      }
+      filteredItems = filteredItems.filter((item) => {
+        if (item.type === 'motivare') {
+          return item.tip_motivare === this.currentTypeFilter;
+        } else {
+          return item.tip_cerere === this.currentTypeFilter;
+        }
+      });
     }
 
     // Sortează după data creării
@@ -372,19 +361,19 @@ class Diriginte {
 
     const statusTexts = {
       in_asteptare: 'În așteptare',
-      cerere_trimisa: 'Cerere trimisă',
+      cerere_trimisa: 'În așteptare',
       aprobata: 'Aprobată',
-      acceptata_diriginte: 'Acceptată',
+      acceptata_diriginte: 'Aprobată',
       respinsa: 'Respinsă',
       finalizata: 'Motivată',
     };
 
     const tipTexts = {
       medicala_clasica: '🏥 Medicală',
-      invoire_lunga: '📅 Învoire Lungă',
-      alte_motive: '📋 Alte Motive',
+      invoire_lunga: '📅 Cerere învoire',
+      alte_motive: '📋 Alte motive',
       personal: '👤 Problemă personală',
-      invoire_justificata: '📋 Învoire justificată',
+      invoire_justificata: '🚨 Învoire justificată',
     };
 
     const canProcess = item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
@@ -405,7 +394,7 @@ class Diriginte {
     `;
     }
 
-    // Checkbox pentru selecție (approved) - va fi în header
+    // Checkbox pentru selecție (approved)
     const checkboxHTML =
       context === 'approved' && canSelect
         ? `
@@ -433,7 +422,7 @@ class Diriginte {
       ${
         item.url_imagine
           ? `
-        <div class="card-image-container">
+        <div class="card-image-container" onclick="event.stopPropagation(); diriginte.openImageModal('${item.url_imagine}')">
           <img src="${item.url_imagine}" alt="Document motivare" loading="lazy" />
         </div>
       `
@@ -554,10 +543,10 @@ class Diriginte {
 
     const tipTexts = {
       medicala_clasica: '🏥 Motivare Medicală',
-      invoire_lunga: '📅 Învoire Lungă',
+      invoire_lunga: '📅 Cerere Învoire',
       alte_motive: '📋 Alte Motive',
       personal: '👤 Învoire Personal',
-      invoire_justificata: '🚨 Urgență Medicală',
+      invoire_justificata: '🚨 Învoire Justificată',
     };
 
     const tipKey = item.type === 'motivare' ? item.tip_motivare : item.tip_cerere;
@@ -590,7 +579,7 @@ class Diriginte {
             ? `
           <div class="detail-row">
             <strong>Document:</strong>
-            <div class="modal-image-container">
+            <div class="modal-image-container" onclick="diriginte.openImageModal('${item.url_imagine}')">
               <img src="${item.url_imagine}" alt="Document motivare" />
             </div>
           </div>
@@ -642,6 +631,28 @@ class Diriginte {
     }
 
     modal.style.display = 'flex';
+  }
+
+  openImageModal(imageUrl) {
+    const modal = document.getElementById('image-modal');
+    const img = document.getElementById('modal-image');
+
+    this.modalImageRotation = 0;
+    img.src = imageUrl;
+    img.style.transform = 'rotate(0deg)';
+
+    modal.style.display = 'flex';
+  }
+
+  rotateModalImage(degrees) {
+    this.modalImageRotation += degrees;
+    const img = document.getElementById('modal-image');
+    img.style.transform = `rotate(${this.modalImageRotation}deg)`;
+  }
+
+  closeImageModal() {
+    document.getElementById('image-modal').style.display = 'none';
+    this.modalImageRotation = 0;
   }
 
   async approveSolicitare() {
@@ -820,15 +831,8 @@ class Diriginte {
     document.execCommand('copy');
     this.showToast('Text copiat în clipboard', 'success');
   }
-
   closeExportModal() {
     document.getElementById('export-modal').style.display = 'none';
-  }
-
-  updateFilterButtons() {
-    document.querySelectorAll('.filter-btn').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.filter === this.currentFilter);
-    });
   }
 
   updateTypeFilterButtons() {
@@ -852,10 +856,163 @@ class Diriginte {
     this.displayRejectedSolicitari();
   }
 
+  // === STATISTICI ELEVI ===
+
+  async loadStatisticiElevi() {
+    try {
+      // Obține lista elevilor din clasa dirigintelui
+      const response = await fetch('/.netlify/functions/get-diriginte-motivari', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clasa: this.currentUser.clasa,
+          action: 'get-elevi',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.elevi = result.data.elevi || [];
+        this.displayEleviList();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Eroare încărcare elevi:', error);
+      this.showToast('Eroare la încărcarea elevilor', 'error');
+    }
+  }
+
+  displayEleviList() {
+    const container = document.getElementById('elevi-list');
+
+    if (!this.elevi || this.elevi.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">👥</div>
+          <p>Nu sunt elevi în această clasă</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Calculează statistici pentru fiecare elev
+    const eleviCuStatistici = this.elevi.map((elev) => {
+      const motivariElev = this.motivari.filter((m) => m.elev_id === elev.id);
+      const cereriElev = this.cereri.filter((c) => c.elev_id === elev.id);
+
+      const totalSolicitari = motivariElev.length + cereriElev.length;
+      const motivate = [
+        ...motivariElev.filter((m) => m.status === 'finalizata'),
+        ...cereriElev.filter((c) => c.status === 'finalizata'),
+      ].length;
+
+      const oreRamase = 42 - (elev.ore_personale_folosite || 0);
+
+      return {
+        ...elev,
+        totalSolicitari,
+        motivate,
+        oreRamase,
+      };
+    });
+
+    // Sortează alfabetic
+    eleviCuStatistici.sort((a, b) =>
+      `${a.nume} ${a.prenume}`.localeCompare(`${b.nume} ${b.prenume}`)
+    );
+
+    const eleviHTML = eleviCuStatistici
+      .map(
+        (elev) => `
+      <div class="elev-card" onclick="diriginte.viewDetaliiElev(${elev.id})">
+        <div class="elev-card-header">
+          <div class="elev-name">${elev.nume} ${elev.prenume}</div>
+        </div>
+        <div class="elev-stats-inline">
+          <div class="elev-stat-item">
+            <span>⏰</span>
+            <strong>${elev.oreRamase}</strong>
+            <span>ore rămase</span>
+          </div>
+          <div class="elev-stat-item">
+            <span>✅</span>
+            <strong>${elev.motivate}</strong>
+            <span>motivate</span>
+          </div>
+          <div class="elev-stat-item">
+            <span>📄</span>
+            <strong>${elev.totalSolicitari}</strong>
+            <span>total</span>
+          </div>
+        </div>
+      </div>
+    `
+      )
+      .join('');
+
+    container.innerHTML = eleviHTML;
+  }
+
+  viewDetaliiElev(elevId) {
+    this.currentElevId = elevId;
+    this.switchPage('detalii-elev');
+    this.displayDetaliiElev(elevId);
+  }
+
+  displayDetaliiElev(elevId) {
+    const elev = this.elevi.find((e) => e.id === elevId);
+    if (!elev) return;
+
+    // Actualizează titlul
+    document.getElementById('detalii-elev-title').textContent = `${elev.nume} ${elev.prenume}`;
+
+    // Filtrează solicitările elevului
+    const motivariElev = this.motivari.filter((m) => m.elev_id === elevId);
+    const cereriElev = this.cereri.filter((c) => c.elev_id === elevId);
+
+    const allItems = [
+      ...motivariElev.map((m) => ({ ...m, type: 'motivare' })),
+      ...cereriElev.map((c) => ({ ...c, type: 'cerere' })),
+    ];
+
+    // Calculează statistici
+    const oreRamase = 42 - (elev.ore_personale_folosite || 0);
+    const motivate = allItems.filter((item) => item.status === 'finalizata').length;
+    const totalSolicitari = allItems.length;
+
+    // Actualizează stats
+    document.getElementById('elev-ore-ramase').textContent = oreRamase;
+    document.getElementById('elev-motivate').textContent = motivate;
+    document.getElementById('elev-total').textContent = totalSolicitari;
+
+    // Afișează lista de solicitări
+    const container = document.getElementById('detalii-elev-feed');
+
+    if (allItems.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <p>Nu sunt solicitări pentru acest elev</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Sortează după data creării
+    allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const itemsHTML = allItems.map((item) => this.createSolicitareCard(item, 'elev')).join('');
+    container.innerHTML = itemsHTML;
+  }
+
   getTipTextMotivare(tip) {
     const tipTexts = {
       medicala_clasica: 'Medicală',
-      invoire_lunga: 'Învoire Lungă',
+      invoire_lunga: 'Cerere învoire',
       alte_motive: 'Alte Motive',
     };
     return tipTexts[tip] || tip;
@@ -864,7 +1021,7 @@ class Diriginte {
   getTipTextCerere(tip) {
     const tipTexts = {
       personal: 'Învoire Personal',
-      invoire_justificata: 'Urgență Medicală',
+      invoire_justificata: 'Învoire Justificată',
     };
     return tipTexts[tip] || tip;
   }
