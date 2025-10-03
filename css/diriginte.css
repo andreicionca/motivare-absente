@@ -293,6 +293,61 @@ body {
   color: #6b7280;
 }
 
+/* Card totaluri clasă */
+.clasa-totals-card {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+.clasa-totals-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.clasa-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.clasa-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.clasa-stat-item .stat-icon {
+  font-size: 1.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clasa-stat-item strong {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.clasa-stat-item span {
+  font-size: 0.8rem;
+  opacity: 0.95;
+}
+
 /* Elev Stats Grid */
 .elev-stats-grid {
   display: grid;
@@ -1035,7 +1090,12 @@ body {
   }
 
   .elev-stats-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr); /* 4 coloane pe tabletă/desktop */
+    gap: 1rem;
+  }
+
+  .clasa-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .action-buttons {
@@ -1072,6 +1132,11 @@ body {
 
 /* Responsive pentru desktop */
 @media (min-width: 1024px) {
+  .clasa-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
   .main-content {
     max-width: 1000px;
   }

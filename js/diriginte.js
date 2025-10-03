@@ -874,14 +874,15 @@ class Diriginte {
 
     if (!this.elevi || this.elevi.length === 0) {
       container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">👥</div>
-          <p>Nu sunt elevi în această clasă</p>
-        </div>
-      `;
+      <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <p>Nu sunt elevi în această clasă</p>
+      </div>
+    `;
       return;
     }
 
+    // Calculează statistici per elev
     const eleviCuStatistici = this.elevi.map((elev) => {
       const motivariElev = this.motivari.filter((m) => m.elev_id === elev.id);
       const cereriElev = this.cereri.filter((c) => c.elev_id === elev.id);
@@ -892,12 +893,19 @@ class Diriginte {
         ...cereriElev.filter((c) => c.status === 'finalizata'),
       ].length;
 
+      // Calculează total ore motivate (suma ore_scazute din motivările finalizate)
+      const oreMotivate = [
+        ...motivariElev.filter((m) => m.status === 'finalizata'),
+        ...cereriElev.filter((c) => c.status === 'finalizata'),
+      ].reduce((sum, item) => sum + (item.ore_scazute || 0), 0);
+
       const oreRamase = 42 - (elev.ore_personale_folosite || 0);
 
       return {
         ...elev,
         totalSolicitari,
         motivate,
+        oreMotivate,
         oreRamase,
       };
     });
@@ -906,36 +914,64 @@ class Diriginte {
       `${a.nume} ${a.prenume}`.localeCompare(`${b.nume} ${b.prenume}`)
     );
 
-    const eleviHTML = eleviCuStatistici
-      .map(
-        (elev) => `
-      <div class="elev-card" onclick="diriginte.viewDetaliiElev(${elev.id})">
-        <div class="elev-card-header">
-          <div class="elev-name">${elev.nume} ${elev.prenume}</div>
+    // Calculează totaluri pe clasă
+    const totalMotivatePeClasa = eleviCuStatistici.reduce((sum, e) => sum + e.motivate, 0);
+    const totalOreMotivatePeClasa = eleviCuStatistici.reduce((sum, e) => sum + e.oreMotivate, 0);
+
+    // Card cu totaluri pe clasă
+    const totaluriHTML = `
+    <div class="clasa-totals-card">
+      <h3>📊 Statistici Clasă ${this.currentUser.clasa}</h3>
+      <div class="clasa-stats">
+        <div class="clasa-stat-item">
+          <span class="stat-icon">✅</span>
+          <div>
+            <strong>${totalMotivatePeClasa}</strong>
+            <span>Total motivări</span>
+          </div>
         </div>
-        <div class="elev-stats-inline">
-          <div class="elev-stat-item">
-            <span>⏰</span>
-            <strong>${elev.oreRamase}</strong>
-            <span>ore rămase</span>
-          </div>
-          <div class="elev-stat-item">
-            <span>✅</span>
-            <strong>${elev.motivate}</strong>
-            <span>motivate</span>
-          </div>
-          <div class="elev-stat-item">
-            <span>📄</span>
-            <strong>${elev.totalSolicitari}</strong>
-            <span>total</span>
+        <div class="clasa-stat-item">
+          <span class="stat-icon">⏰</span>
+          <div>
+            <strong>${totalOreMotivatePeClasa}</strong>
+            <span>Ore motivate</span>
           </div>
         </div>
       </div>
-    `
+    </div>
+  `;
+
+    // Carduri elevi
+    const eleviHTML = eleviCuStatistici
+      .map(
+        (elev) => `
+    <div class="elev-card" onclick="diriginte.viewDetaliiElev(${elev.id})">
+      <div class="elev-card-header">
+        <div class="elev-name">${elev.nume} ${elev.prenume}</div>
+      </div>
+      <div class="elev-stats-inline">
+        <div class="elev-stat-item">
+          <span>⏰</span>
+          <strong>${elev.oreRamase}</strong>
+          <span>ore rămase</span>
+        </div>
+        <div class="elev-stat-item">
+          <span>✅</span>
+          <strong>${elev.motivate}</strong>
+          <span>motivate</span>
+        </div>
+        <div class="elev-stat-item">
+          <span>📝</span>
+          <strong>${elev.oreMotivate}</strong>
+          <span>ore motivate</span>
+        </div>
+      </div>
+    </div>
+  `
       )
       .join('');
 
-    container.innerHTML = eleviHTML;
+    container.innerHTML = totaluriHTML + eleviHTML;
   }
 
   viewDetaliiElev(elevId) {
@@ -960,10 +996,17 @@ class Diriginte {
 
     const oreRamase = 42 - (elev.ore_personale_folosite || 0);
     const motivate = allItems.filter((item) => item.status === 'finalizata').length;
+
+    // Calculează total ore motivate
+    const oreMotivate = allItems
+      .filter((item) => item.status === 'finalizata')
+      .reduce((sum, item) => sum + (item.ore_scazute || 0), 0);
+
     const totalSolicitari = allItems.length;
 
     document.getElementById('elev-ore-ramase').textContent = oreRamase;
     document.getElementById('elev-motivate').textContent = motivate;
+    document.getElementById('elev-ore-motivate').textContent = oreMotivate; // nou
     document.getElementById('elev-total').textContent = totalSolicitari;
 
     const container = document.getElementById('detalii-elev-feed');
