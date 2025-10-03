@@ -718,33 +718,42 @@ class Diriginte {
   generateExportText(items) {
     // Generează array-ul absenceConfig
     const absenceConfigArray = items.map((item) => {
-      // Determină reasonType pe baza tipului
+      // Determină reasonType și reason pe baza tipului
       let reasonType;
+      let reason;
+
       if (item.type === 'motivare') {
         switch (item.tip_motivare) {
           case 'medicala_clasica':
-            reasonType = '1'; // Scutire medicală
+            reasonType = '1';
+            reason = item.motiv || 'Scutire medicală';
             break;
           case 'invoire_lunga':
-            reasonType = '0'; // Invoire parinte
+            reasonType = '0';
+            reason = item.motiv || 'Învoire părinte';
             break;
           case 'alte_motive':
-            reasonType = '2'; // Alt motiv
+            reasonType = '2';
+            reason = item.motiv || 'Motivare';
             break;
           default:
             reasonType = '2';
+            reason = item.motiv || 'Motivare';
         }
       } else {
         // cerere
         switch (item.tip_cerere) {
           case 'personal':
-            reasonType = '0'; // Invoire parinte
+            reasonType = '0';
+            reason = item.motiv || 'Problemă personală';
             break;
           case 'invoire_justificata':
-            reasonType = '2'; // Alt motiv
+            reasonType = '2';
+            reason = item.motiv || 'Învoire justificată';
             break;
           default:
             reasonType = '2';
+            reason = item.motiv || 'Motivare';
         }
       }
 
@@ -760,9 +769,6 @@ class Diriginte {
         endDate = this.formatDateForScript(item.data_solicitata);
       }
 
-      // Determină motivul
-      let reason = item.motiv || 'motivare absență';
-
       return {
         studentName: `${item.elev_nume} ${item.elev_prenume}`,
         startDate: startDate,
@@ -772,7 +778,7 @@ class Diriginte {
       };
     });
 
-    // Generează script-ul complet
+    // Restul script-ului rămâne la fel...
     const scriptText = `(function () {
   console.log("Script pornit.");
   const absenceConfig = ${JSON.stringify(absenceConfigArray, null, 4)};
@@ -917,7 +923,6 @@ class Diriginte {
     return scriptText;
   }
 
-  // Adaugă funcția auxiliară pentru formatarea datei în format DD.MM.YYYY
   formatDateForScript(dateString) {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');

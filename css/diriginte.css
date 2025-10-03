@@ -631,16 +631,6 @@ body {
   transform: scale(1.05);
 }
 
-.expand-btn-inline {
-  background: #2563eb;
-  color: white;
-  border-color: #2563eb;
-}
-
-.expand-btn-inline:hover {
-  background: #1d4ed8;
-}
-
 .card-image-container img {
   width: 100%;
   height: auto;
