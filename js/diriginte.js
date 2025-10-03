@@ -1185,6 +1185,12 @@ class Diriginte {
     container.innerHTML = totaluriHTML + eleviHTML;
   }
 
+  viewDetaliiElev(elevId) {
+    this.currentElevId = elevId;
+    this.switchPage('detalii-elev');
+    this.displayDetaliiElev(elevId);
+  }
+
   displayDetaliiElev(elevId) {
     const elev = this.elevi.find((e) => e.id === elevId);
     if (!elev) return;
