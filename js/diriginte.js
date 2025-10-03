@@ -348,7 +348,6 @@ class Diriginte {
     const itemsHTML = filteredItems.map((item) => this.createSolicitareCard(item, 'all')).join('');
     container.innerHTML = itemsHTML;
   }
-
   createSolicitareCard(item, context) {
     const statusColors = {
       in_asteptare: '#D97706',
