@@ -11,28 +11,21 @@ class Diriginte {
     this.currentItem = null;
     this.currentElevId = null;
     this.modalImageRotation = 0;
+    this.imageRotations = {}; // Stochează rotațiile pentru fiecare imagine
     this.init();
   }
 
   async init() {
-    // Verifică autentificarea
     await this.checkAuth();
-
-    // Inițializează interfața
     this.setupNavigation();
     this.setupEventListeners();
-
-    // Încarcă datele
     await this.loadSolicitari();
-
-    // Actualizează interfața
     this.updateUserInterface();
     this.updateStats();
   }
 
   async checkAuth() {
     this.currentUser = await auth.checkCurrentUser();
-
     if (!this.currentUser || this.currentUser.role !== 'diriginte') {
       window.location.href = 'index.html';
       return;
@@ -41,13 +34,10 @@ class Diriginte {
 
   setupNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
-
     navItems.forEach((item) => {
       item.addEventListener('click', () => {
         const page = item.dataset.page;
         this.switchPage(page);
-
-        // Actualizează nav active
         navItems.forEach((nav) => nav.classList.remove('active'));
         item.classList.add('active');
       });
@@ -55,18 +45,15 @@ class Diriginte {
   }
 
   switchPage(page) {
-    // Ascunde toate paginile
     document.querySelectorAll('.page-content').forEach((pageEl) => {
       pageEl.classList.remove('active');
     });
 
-    // Afișează pagina selectată
     const targetPage = document.getElementById(`page-${page}`);
     if (targetPage) {
       targetPage.classList.add('active');
     }
 
-    // Actualizează bottom nav
     document.querySelectorAll('.nav-item').forEach((nav) => {
       nav.classList.remove('active');
       if (nav.dataset.page === page) {
@@ -74,7 +61,6 @@ class Diriginte {
       }
     });
 
-    // Logica specifică pentru fiecare pagină
     switch (page) {
       case 'dashboard':
         this.updateStats();
@@ -103,7 +89,6 @@ class Diriginte {
   }
 
   setupEventListeners() {
-    // Filtre tipuri pentru pagina "toate"
     const typeFilterBtns = document.querySelectorAll('.type-filter-btn');
     typeFilterBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -113,7 +98,6 @@ class Diriginte {
       });
     });
 
-    // Click outside modal pentru închidere
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('modal-overlay')) {
         this.closeModal();
@@ -126,16 +110,13 @@ class Diriginte {
   updateUserInterface() {
     if (!this.currentUser) return;
 
-    // Actualizează header
     document.getElementById(
       'user-name'
     ).textContent = `${this.currentUser.nume} ${this.currentUser.prenume}`;
-
     document.getElementById(
       'user-class'
     ).textContent = `Diriginte • Clasa ${this.currentUser.clasa}`;
 
-    // Avatar
     const avatar = this.currentUser.nume.charAt(0).toUpperCase();
     document.getElementById('user-avatar').textContent = avatar;
   }
@@ -144,9 +125,7 @@ class Diriginte {
     try {
       const response = await fetch('/.netlify/functions/get-diriginte-motivari', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clasa: this.currentUser.clasa,
           action: 'get-all-data',
@@ -170,7 +149,6 @@ class Diriginte {
   }
 
   updateStats() {
-    // Combină motivări și cereri pentru statistici
     const allItems = [
       ...this.motivari.map((m) => ({ ...m, type: 'motivare' })),
       ...this.cereri.map((c) => ({ ...c, type: 'cerere' })),
@@ -187,13 +165,10 @@ class Diriginte {
     const rejected = allItems.filter((item) => item.status === 'respinsa').length;
     const finalized = allItems.filter((item) => item.status === 'finalizata').length;
 
-    // Actualizează cardurile de statistici
     document.getElementById('total-pending').textContent = pending;
     document.getElementById('total-approved').textContent = approved;
     document.getElementById('total-rejected').textContent = rejected;
     document.getElementById('total-finalized').textContent = finalized;
-
-    // Actualizează badge-urile din quick actions
     document.getElementById('pending-badge').textContent = pending;
   }
 
@@ -227,22 +202,22 @@ class Diriginte {
       (item) => item.status === 'in_asteptare' || item.status === 'cerere_trimisa'
     );
 
-    // Sortează după data creării
     pendingItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const container = document.getElementById('pending-feed');
-    const emptyState = document.getElementById('pending-empty');
     const countBadge = document.getElementById('pending-count');
 
     countBadge.textContent = pendingItems.length;
 
     if (pendingItems.length === 0) {
-      container.innerHTML = '';
-      emptyState.style.display = 'block';
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">✅</div>
+          <p>Nu sunt solicitări în așteptare</p>
+        </div>
+      `;
       return;
     }
-
-    emptyState.style.display = 'none';
 
     const itemsHTML = pendingItems
       .map((item) => this.createSolicitareCard(item, 'pending'))
@@ -260,19 +235,19 @@ class Diriginte {
       (item) => item.status === 'aprobata' || item.status === 'acceptata_diriginte'
     );
 
-    // Sortează după data creării
     approvedItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const container = document.getElementById('approved-feed');
-    const emptyState = document.getElementById('approved-empty');
 
     if (approvedItems.length === 0) {
-      container.innerHTML = '';
-      emptyState.style.display = 'block';
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <p>Nu sunt solicitări aprobate</p>
+        </div>
+      `;
       return;
     }
-
-    emptyState.style.display = 'none';
 
     const itemsHTML = approvedItems
       .map((item) => this.createSolicitareCard(item, 'approved'))
@@ -288,19 +263,19 @@ class Diriginte {
 
     const rejectedItems = allItems.filter((item) => item.status === 'respinsa');
 
-    // Sortează după data creării
     rejectedItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const container = document.getElementById('rejected-feed');
-    const emptyState = document.getElementById('rejected-empty');
 
     if (rejectedItems.length === 0) {
-      container.innerHTML = '';
-      emptyState.style.display = 'block';
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">❌</div>
+          <p>Nu sunt solicitări respinse</p>
+        </div>
+      `;
       return;
     }
-
-    emptyState.style.display = 'none';
 
     const itemsHTML = rejectedItems
       .map((item) => this.createSolicitareCard(item, 'rejected'))
@@ -320,7 +295,6 @@ class Diriginte {
 
     let filteredItems = allItems;
 
-    // Filtrare după tip
     if (this.currentTypeFilter !== 'toate') {
       filteredItems = filteredItems.filter((item) => {
         if (item.type === 'motivare') {
@@ -331,23 +305,24 @@ class Diriginte {
       });
     }
 
-    // Sortează după data creării
     filteredItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const container = document.getElementById('all-feed');
-    const emptyState = document.getElementById('all-empty');
 
     if (filteredItems.length === 0) {
-      container.innerHTML = '';
-      emptyState.style.display = 'block';
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <p>Nu sunt solicitări</p>
+        </div>
+      `;
       return;
     }
-
-    emptyState.style.display = 'none';
 
     const itemsHTML = filteredItems.map((item) => this.createSolicitareCard(item, 'all')).join('');
     container.innerHTML = itemsHTML;
   }
+
   createSolicitareCard(item, context) {
     const statusColors = {
       in_asteptare: '#D97706',
@@ -378,114 +353,134 @@ class Diriginte {
     const canProcess = item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
     const canSelect = item.status === 'aprobata' || item.status === 'acceptata_diriginte';
 
-    // Acțiuni pentru butoane (pending)
     let actionsHTML = '';
     if (context === 'pending' && canProcess) {
       actionsHTML = `
-      <div class="card-actions">
-        <button class="card-btn reject-btn" onclick="event.stopPropagation(); diriginte.quickReject('${item.type}', ${item.id})">
-          Respinge
-        </button>
-        <button class="card-btn approve-btn" onclick="event.stopPropagation(); diriginte.quickApprove('${item.type}', ${item.id})">
-          Aprobă
-        </button>
-      </div>
-    `;
+        <div class="card-actions">
+          <button class="card-btn reject-btn" onclick="event.stopPropagation(); diriginte.quickReject('${item.type}', ${item.id})">
+            Respinge
+          </button>
+          <button class="card-btn approve-btn" onclick="event.stopPropagation(); diriginte.quickApprove('${item.type}', ${item.id})">
+            Aprobă
+          </button>
+        </div>
+      `;
     }
 
-    // Checkbox pentru selecție (approved)
     const checkboxHTML =
       context === 'approved' && canSelect
         ? `
-    <input type="checkbox" class="solicitare-checkbox"
-           onclick="event.stopPropagation()"
-           onchange="diriginte.toggleItemSelection('${item.type}', ${item.id}, this.checked)">
-  `
+      <input type="checkbox" class="solicitare-checkbox"
+             onclick="event.stopPropagation()"
+             onchange="diriginte.toggleItemSelection('${item.type}', ${item.id}, this.checked)">
+    `
         : '';
 
-    // Conținut specific tipului
     let contentHTML = '';
     if (item.type === 'motivare') {
+      const imageId = `img-${item.type}-${item.id}`;
+      const currentRotation = this.imageRotations[imageId] || 0;
+
       contentHTML = `
-      <div class="perioada">
-        <strong>Perioada:</strong>
-        ${this.formatDate(item.perioada_inceput)}
-        ${item.perioada_sfarsit ? ` - ${this.formatDate(item.perioada_sfarsit)}` : ''}
-      </div>
-      ${item.motiv ? `<div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>` : ''}
-      ${
-        item.ore_scazute > 0
-          ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
-          : ''
-      }
-      ${
-        item.url_imagine
-          ? `
-        <div class="card-image-container" onclick="event.stopPropagation(); diriginte.openImageModal('${item.url_imagine}')">
-          <img src="${item.url_imagine}" alt="Document motivare" loading="lazy" />
+        <div class="perioada">
+          <strong>Perioada:</strong>
+          ${this.formatDate(item.perioada_inceput)}
+          ${item.perioada_sfarsit ? ` - ${this.formatDate(item.perioada_sfarsit)}` : ''}
         </div>
-      `
-          : ''
-      }
-    `;
+        ${item.motiv ? `<div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>` : ''}
+        ${
+          item.ore_scazute > 0
+            ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
+            : ''
+        }
+        ${
+          item.url_imagine
+            ? `
+          <div class="card-image-container">
+            <div class="image-controls-inline">
+              <button type="button" class="rotate-btn-inline" onclick="event.stopPropagation(); diriginte.rotateCardImage('${imageId}', -90)" title="Rotește stânga">
+                ↺
+              </button>
+              <button type="button" class="rotate-btn-inline" onclick="event.stopPropagation(); diriginte.rotateCardImage('${imageId}', 90)" title="Rotește dreapta">
+                ↻
+              </button>
+              <button type="button" class="expand-btn-inline" onclick="event.stopPropagation(); diriginte.openImageModal('${item.url_imagine}')" title="Mărește">
+                ⛶
+              </button>
+            </div>
+            <img id="${imageId}" src="${item.url_imagine}" alt="Document motivare" loading="lazy" style="transform: rotate(${currentRotation}deg);" />
+          </div>
+        `
+            : ''
+        }
+      `;
     } else {
       contentHTML = `
-      <div class="perioada">
-        <strong>Data:</strong> ${this.formatDate(item.data_solicitata)}
-        <br><strong>Ore:</strong> ${item.ora_inceput} - ${item.ora_sfarsit} (${
+        <div class="perioada">
+          <strong>Data:</strong> ${this.formatDate(item.data_solicitata)}
+          <br><strong>Ore:</strong> ${item.ora_inceput} - ${item.ora_sfarsit} (${
         item.ore_solicitate
       }h)
-      </div>
-      <div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>
-      ${
-        item.ore_scazute > 0
-          ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
-          : ''
-      }
-    `;
+        </div>
+        <div class="motiv"><strong>Motiv:</strong> ${item.motiv}</div>
+        ${
+          item.ore_scazute > 0
+            ? `<div class="ore-info"><strong>Ore scăzute:</strong> ${item.ore_scazute}</div>`
+            : ''
+        }
+      `;
     }
 
     const tipKey = item.type === 'motivare' ? item.tip_motivare : item.tip_cerere;
 
     return `
-    <div class="solicitare-card ${item.status}" onclick="diriginte.viewSolicitare('${item.type}', ${
-      item.id
-    })">
-      ${actionsHTML}
+      <div class="solicitare-card ${item.status}" onclick="diriginte.viewSolicitare('${
+      item.type
+    }', ${item.id})">
+        ${actionsHTML}
 
-      <div class="card-header">
-        <div class="student-info">
-          <div class="student-name">${item.elev_nume} ${item.elev_prenume}</div>
-          <div class="solicitare-tip">${tipTexts[tipKey] || tipKey}</div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          ${checkboxHTML}
-          <div class="status-badge" style="background: ${statusColors[item.status]};">
-            ${statusTexts[item.status]}
+        <div class="card-header">
+          <div class="student-info">
+            <div class="student-name">${item.elev_nume} ${item.elev_prenume}</div>
+            <div class="solicitare-tip">${tipTexts[tipKey] || tipKey}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            ${checkboxHTML}
+            <div class="status-badge" style="background: ${statusColors[item.status]};">
+              ${statusTexts[item.status]}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card-content">
-        ${contentHTML}
-      </div>
+        <div class="card-content">
+          ${contentHTML}
+        </div>
 
-      <div class="card-footer">
-        <small>Trimis la: ${this.formatDateTime(item.created_at)}</small>
-        <small>de: ${item.trimis_de === 'elev' ? 'Elev' : 'Părinte'}</small>
+        <div class="card-footer">
+          <small>Trimis la: ${this.formatDateTime(item.created_at)}</small>
+          <small>de: ${item.trimis_de === 'elev' ? 'Elev' : 'Părinte'}</small>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
+
+  rotateCardImage(imageId, degrees) {
+    const img = document.getElementById(imageId);
+    if (!img) return;
+
+    const currentRotation = this.imageRotations[imageId] || 0;
+    const newRotation = currentRotation + degrees;
+
+    this.imageRotations[imageId] = newRotation;
+    img.style.transform = `rotate(${newRotation}deg)`;
   }
 
   async quickApprove(type, itemId) {
-    event.stopPropagation();
     const newStatus = type === 'motivare' ? 'aprobata' : 'acceptata_diriginte';
     await this.updateItemStatus(type, itemId, newStatus);
   }
 
   async quickReject(type, itemId) {
-    event.stopPropagation();
     await this.updateItemStatus(type, itemId, 'respinsa');
   }
 
@@ -495,9 +490,7 @@ class Diriginte {
 
       const response = await fetch(`/.netlify/functions/${functionName}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           [`${type}Id`]: itemId,
           status: newStatus,
@@ -511,7 +504,6 @@ class Diriginte {
         this.showToast(`Solicitarea a fost ${statusText}`, 'success');
         await this.loadSolicitari();
 
-        // Reîmprospătează pagina curentă
         const activePage = document.querySelector('.nav-item.active').dataset.page;
         this.switchPage(activePage);
       } else {
@@ -619,7 +611,6 @@ class Diriginte {
 
     modalBody.innerHTML = detailsHTML;
 
-    // Afișează/ascunde butoanele în funcție de status
     const modalActions = document.getElementById('modal-actions');
     const canProcess = item.status === 'in_asteptare' || item.status === 'cerere_trimisa';
 
@@ -695,11 +686,9 @@ class Diriginte {
     );
 
     if (selectAllCheckbox.checked) {
-      // Selectează toate
       approvedItems.forEach((item) => this.selectedItems.add(`${item.type}_${item.id}`));
       document.querySelectorAll('.solicitare-checkbox').forEach((cb) => (cb.checked = true));
     } else {
-      // Deselectează toate
       approvedItems.forEach((item) => this.selectedItems.delete(`${item.type}_${item.id}`));
       document.querySelectorAll('.solicitare-checkbox').forEach((cb) => (cb.checked = false));
     }
@@ -761,7 +750,6 @@ class Diriginte {
       return;
     }
 
-    // Separă motivările de cereri
     const motivariIds = [];
     const cereriIds = [];
 
@@ -775,16 +763,11 @@ class Diriginte {
     });
 
     try {
-      // Finalizează motivările
       if (motivariIds.length > 0) {
         const response = await fetch('/.netlify/functions/finalizeaza-motivari', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            motivariIds: motivariIds,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivariIds: motivariIds }),
         });
 
         const result = await response.json();
@@ -793,16 +776,11 @@ class Diriginte {
         }
       }
 
-      // Finalizează cererile
       if (cereriIds.length > 0) {
         const response = await fetch('/.netlify/functions/finalizeaza-cereri', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            cereriIds: cereriIds,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cereriIds: cereriIds }),
         });
 
         const result = await response.json();
@@ -830,6 +808,15 @@ class Diriginte {
     document.execCommand('copy');
     this.showToast('Text copiat în clipboard', 'success');
   }
+  // Continuare...
+
+  copyExportText() {
+    const textArea = document.getElementById('export-text');
+    textArea.select();
+    document.execCommand('copy');
+    this.showToast('Text copiat în clipboard', 'success');
+  }
+
   closeExportModal() {
     document.getElementById('export-modal').style.display = 'none';
   }
@@ -859,12 +846,9 @@ class Diriginte {
 
   async loadStatisticiElevi() {
     try {
-      // Obține lista elevilor din clasa dirigintelui
       const response = await fetch('/.netlify/functions/get-diriginte-motivari', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clasa: this.currentUser.clasa,
           action: 'get-elevi',
@@ -898,7 +882,6 @@ class Diriginte {
       return;
     }
 
-    // Calculează statistici pentru fiecare elev
     const eleviCuStatistici = this.elevi.map((elev) => {
       const motivariElev = this.motivari.filter((m) => m.elev_id === elev.id);
       const cereriElev = this.cereri.filter((c) => c.elev_id === elev.id);
@@ -919,7 +902,6 @@ class Diriginte {
       };
     });
 
-    // Sortează alfabetic
     eleviCuStatistici.sort((a, b) =>
       `${a.nume} ${a.prenume}`.localeCompare(`${b.nume} ${b.prenume}`)
     );
@@ -966,10 +948,8 @@ class Diriginte {
     const elev = this.elevi.find((e) => e.id === elevId);
     if (!elev) return;
 
-    // Actualizează titlul
     document.getElementById('detalii-elev-title').textContent = `${elev.nume} ${elev.prenume}`;
 
-    // Filtrează solicitările elevului
     const motivariElev = this.motivari.filter((m) => m.elev_id === elevId);
     const cereriElev = this.cereri.filter((c) => c.elev_id === elevId);
 
@@ -978,17 +958,14 @@ class Diriginte {
       ...cereriElev.map((c) => ({ ...c, type: 'cerere' })),
     ];
 
-    // Calculează statistici
     const oreRamase = 42 - (elev.ore_personale_folosite || 0);
     const motivate = allItems.filter((item) => item.status === 'finalizata').length;
     const totalSolicitari = allItems.length;
 
-    // Actualizează stats
     document.getElementById('elev-ore-ramase').textContent = oreRamase;
     document.getElementById('elev-motivate').textContent = motivate;
     document.getElementById('elev-total').textContent = totalSolicitari;
 
-    // Afișează lista de solicitări
     const container = document.getElementById('detalii-elev-feed');
 
     if (allItems.length === 0) {
@@ -1001,7 +978,6 @@ class Diriginte {
       return;
     }
 
-    // Sortează după data creării
     allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const itemsHTML = allItems.map((item) => this.createSolicitareCard(item, 'elev')).join('');
@@ -1033,11 +1009,9 @@ class Diriginte {
     return new Date(dateString).toLocaleString('ro-RO');
   }
 
-  // Toast notifications system
   showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) {
-      // Fallback la alert dacă nu există containerul
       alert(message);
       return;
     }
@@ -1053,14 +1027,12 @@ class Diriginte {
 
     container.appendChild(toast);
 
-    // Auto-remove după 4 secunde
     setTimeout(() => {
       if (toast.parentNode) {
         toast.parentNode.removeChild(toast);
       }
     }, 4000);
 
-    // Remove pe click
     toast.addEventListener('click', () => {
       if (toast.parentNode) {
         toast.parentNode.removeChild(toast);
