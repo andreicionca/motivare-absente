@@ -27,11 +27,11 @@ exports.handler = async (event, context) => {
 
     // Upload la Cloudinary cu optimizări automate
     const uploadResult = await cloudinary.uploader.upload(image, {
-      folder: 'motivari', // Organizează într-un folder
+      folder: 'motivari-scolare', // Organizează într-un folder
       resource_type: 'auto',
 
       // 🔥 OPTIMIZĂRI AUTOMATE
-      quality: 'auto:good', // Compresia automată (reduce 50-70%)
+      quality: 'auto:eco', // Compresia automată (reduce 50-70%)
       format: 'jpg', // Convertește tot în JPG (inclusiv HEIC)
 
       // Limitează dimensiunea maximă
@@ -39,7 +39,9 @@ exports.handler = async (event, context) => {
         {
           width: 1920,
           height: 1920,
-          crop: 'limit', // Nu mărește imaginile mici
+          crop: 'limit',
+          quality: 70,
+          flags: 'progressive',
         },
       ],
     });
