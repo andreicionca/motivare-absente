@@ -510,27 +510,46 @@ class Dashboard {
     return Math.ceil(diffMs / (1000 * 60 * 60)); // Convert to hours, rounded up
   }
 
+  // ✅ NOUA FUNCȚIE (upload prin Netlify Function):
   async uploadImage(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', Config.CLOUDINARY_CONFIG.uploadPreset);
+    try {
+      // Convertește fișierul în base64
+      const base64 = await this.convertToBase64(file);
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${Config.CLOUDINARY_CONFIG.cloudName}/image/upload`,
-      {
+      // Trimite la funcția Netlify (nu mai direct la Cloudinary)
+      const response = await fetch('/.netlify/functions/upload-image', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64,
+          filename: file.name,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error);
       }
-    );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Cloudinary error:', data);
-      throw new Error('Eroare upload imagine');
+      console.log('✅ Imagine uploadată:', result);
+      return result.url; // Returnează URL-ul securizat
+    } catch (error) {
+      console.error('❌ Eroare upload:', error);
+      throw new Error('Eroare la încărcarea imaginii');
     }
+  }
 
-    return data.secure_url;
+  // ✅ FUNCȚIE NOUĂ (adaugă după uploadImage):
+  convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   }
 
   // File handling

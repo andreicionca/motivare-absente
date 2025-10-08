@@ -39,11 +39,7 @@ const TIPURI_CERERI = {
   INVOIRE_JUSTIFICATA: 'invoire_justificata',
 };
 
-// Cloudinary (public, safe în browser)
-const CLOUDINARY_CONFIG = {
-  cloudName: 'dwn9uyndj',
-  uploadPreset: 'motivari_upload',
-};
+// ❌ CLOUDINARY_CONFIG - ȘTERS (acum e pe backend)
 
 // Export global
 window.Config = {
@@ -52,5 +48,5 @@ window.Config = {
   STATUS_CERERI,
   TIPURI_MOTIVARI,
   TIPURI_CERERI,
-  CLOUDINARY_CONFIG,
+  // ❌ CLOUDINARY_CONFIG - ȘTERS
 };
