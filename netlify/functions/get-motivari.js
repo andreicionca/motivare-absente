@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { calculateOrePersonale } = require('./utils/calculateOrePersonale');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
@@ -13,24 +14,8 @@ exports.handler = async (event, context) => {
   try {
     const { elevId, action, motivareId } = JSON.parse(event.body);
 
-    if (action === 'get-user-data') {
-      // Încarcă datele elevului
-      const { data: elevData, error } = await supabase
-        .from('elevi')
-        .select('ore_personale_folosite')
-        .eq('id', elevId)
-        .single();
-
-      if (error) throw error;
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          data: elevData,
-        }),
-      };
-    }
+    // ❌ ȘTERGE - nu mai e nevoie, calculăm dinamic
+    // if (action === 'get-user-data') { ... }
 
     if (action === 'get-motivari') {
       // Încarcă doar motivările (cu imagini)
@@ -69,13 +54,20 @@ exports.handler = async (event, context) => {
       if (motivariResult.error) throw motivariResult.error;
       if (cereriResult.error) throw cereriResult.error;
 
+      const motivari = motivariResult.data || [];
+      const cereri = cereriResult.data || [];
+
+      // ✅ CALCULEAZĂ ORE PERSONALE FOLOSITE
+      const orePersonaleFolosite = calculateOrePersonale(motivari, cereri);
+
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           data: {
-            motivari: motivariResult.data || [],
-            cereri: cereriResult.data || [],
+            motivari,
+            cereri,
+            orePersonaleFolosite, // ✅ Adaugă aici
           },
         }),
       };

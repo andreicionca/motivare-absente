@@ -20,7 +20,6 @@ class Dashboard {
     this.setupEventListeners();
 
     // Încarcă datele
-    await this.loadUserData();
     await this.loadMotivari();
 
     // Actualizează interfața
@@ -139,42 +138,6 @@ class Dashboard {
     document.querySelectorAll('#user-avatar').forEach((el) => {
       el.textContent = avatar;
     });
-
-    // Ascunde butonul Învoire de la părinte pentru elevi
-    // if (this.currentUser.role === 'elev') {
-    //   const invoireLungaCard = document.getElementById('invoire-lunga-card');
-    //   if (invoireLungaCard) {
-    //     invoireLungaCard.style.display = 'none';
-    //   }
-    // }
-  }
-
-  async loadUserData() {
-    try {
-      const elevId =
-        this.currentUser.role === 'elev' ? this.currentUser.id : this.currentUser.elevId;
-
-      const response = await fetch('/.netlify/functions/get-motivari', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          elevId: elevId,
-          action: 'get-user-data',
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        this.currentUser.orePersonaleFolosite = result.data.ore_personale_folosite || 0;
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Eroare încărcare date utilizator:', error);
-    }
   }
 
   async loadMotivari() {
@@ -198,6 +161,7 @@ class Dashboard {
       if (result.success) {
         this.motivari = result.data.motivari || [];
         this.cereri = result.data.cereri || [];
+        this.currentUser.orePersonaleFolosite = result.data.orePersonaleFolosite || 0;
         this.displayMotivari();
         this.updateStats();
       } else {
@@ -210,26 +174,20 @@ class Dashboard {
   }
 
   updateStats() {
-    const orePersonaleFolosite =
-      this.cereri
-        .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
-        .reduce((total, c) => total + (c.ore_scazute || 0), 0) +
-      this.motivari
-        .filter((m) => m.tip_motivare === 'invoire_lunga' && m.status === 'finalizata')
-        .reduce((total, m) => total + (m.ore_scazute || 0), 0);
-
-    const oreRamase = Config.APP_CONFIG.oreLimitaPersonale - orePersonaleFolosite;
+    // ✅ Folosește direct valoarea din currentUser
+    const oreRamase =
+      Config.APP_CONFIG.oreLimitaPersonale - (this.currentUser.orePersonaleFolosite || 0);
 
     const totalMotivari = this.motivari.length + this.cereri.length;
     const inAsteptare =
       this.motivari.filter((m) => m.status === 'in_asteptare').length +
       this.cereri.filter((c) => c.status === 'cerere_trimisa').length;
-    // Calculează orele de absență motivată
+
+    // Calculează orele de absență motivată (RĂMÂNE LA FEL)
     const absenteMotivate =
       this.motivari
         .filter((m) => m.status === 'finalizata')
         .reduce((total, m) => {
-          // Pentru motivări, calculează zilele și înmulțește cu 6 ore/zi
           const startDate = new Date(m.perioada_inceput);
           const endDate = new Date(m.perioada_sfarsit || m.perioada_inceput);
           let zileScolare = 0;
@@ -315,16 +273,9 @@ class Dashboard {
     const tipInput = document.getElementById('tip-cerere');
     tipInput.value = tip;
 
-    // Calculează orele personale folosite dinamic din cereri
-    const orePersonaleFolosite =
-      this.cereri
-        .filter((c) => c.tip_cerere === 'personal' && c.status === 'finalizata')
-        .reduce((total, c) => total + (c.ore_scazute || 0), 0) +
-      this.motivari
-        .filter((m) => m.tip_motivare === 'invoire_lunga' && m.status === 'finalizata')
-        .reduce((total, m) => total + (m.ore_scazute || 0), 0);
-
-    const oreRamase = Config.APP_CONFIG.oreLimitaPersonale - orePersonaleFolosite;
+    // ✅ Folosește direct valoarea din currentUser
+    const oreRamase =
+      Config.APP_CONFIG.oreLimitaPersonale - (this.currentUser.orePersonaleFolosite || 0);
 
     // Actualizează textul informativ în funcție de rol și ore disponibile
     const infoText = document.getElementById('cerere-info-text');

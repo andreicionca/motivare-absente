@@ -17,14 +17,6 @@ exports.handler = async (event, context) => {
       throw new Error('Lista de cereri este invalidă');
     }
 
-    // Obține cererile selectate pentru a actualiza orele personale
-    const { data: cereri, error: cereriError } = await supabase
-      .from('cereri_invoire_scurta')
-      .select('id, elev_id, tip_cerere, ore_scazute')
-      .in('id', cereriIds);
-
-    if (cereriError) throw cereriError;
-
     // Actualizează statusul cererilor la 'finalizata'
     const { error: updateError } = await supabase
       .from('cereri_invoire_scurta')
@@ -35,42 +27,6 @@ exports.handler = async (event, context) => {
       .in('id', cereriIds);
 
     if (updateError) throw updateError;
-
-    // Actualizează ore_personale_folosite pentru fiecare elev
-    // Doar pentru cereri de tip 'personal' care scad din cele 42 ore
-    const eleviMap = new Map();
-
-    cereri.forEach((cerere) => {
-      if (cerere.tip_cerere === 'personal' && cerere.ore_scazute > 0) {
-        if (eleviMap.has(cerere.elev_id)) {
-          eleviMap.set(cerere.elev_id, eleviMap.get(cerere.elev_id) + cerere.ore_scazute);
-        } else {
-          eleviMap.set(cerere.elev_id, cerere.ore_scazute);
-        }
-      }
-    });
-
-    // Actualizează câmpul ore_personale_folosite pentru fiecare elev
-    for (const [elevId, oreDeScos] of eleviMap) {
-      // Obține valoarea curentă
-      const { data: elev, error: elevError } = await supabase
-        .from('elevi')
-        .select('ore_personale_folosite')
-        .eq('id', elevId)
-        .single();
-
-      if (elevError) throw elevError;
-
-      // Actualizează cu noua valoare
-      const { error: updateElevError } = await supabase
-        .from('elevi')
-        .update({
-          ore_personale_folosite: (elev.ore_personale_folosite || 0) + oreDeScos,
-        })
-        .eq('id', elevId);
-
-      if (updateElevError) throw updateElevError;
-    }
 
     return {
       statusCode: 200,

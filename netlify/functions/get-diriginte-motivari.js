@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { calculateOrePersonale } = require('./utils/calculateOrePersonale'); // ✅ ADAUGĂ
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
@@ -13,10 +14,10 @@ exports.handler = async (event, context) => {
   try {
     const { clasa, action } = JSON.parse(event.body);
 
-    // Obține elevii din clasa dirigintelui
+    // ✅ Șterge ore_personale_folosite din SELECT
     const { data: elevi, error: eleviError } = await supabase
       .from('elevi')
-      .select('id, nume, prenume, ore_personale_folosite')
+      .select('id, nume, prenume') // ✅ FĂRĂ ore_personale_folosite
       .eq('clasa', clasa)
       .order('nume', { ascending: true });
 
@@ -39,20 +40,40 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Acțiune: get-elevi - returnează lista de elevi
+    // Acțiune: get-elevi
     if (action === 'get-elevi') {
+      // ✅ Ia TOATE motivările și cererile pentru calcul
+      const [motivariResult, cereriResult] = await Promise.all([
+        supabase.from('motivari').select('*').in('elev_id', eleviIds),
+        supabase.from('cereri_invoire_scurta').select('*').in('elev_id', eleviIds),
+      ]);
+
+      if (motivariResult.error) throw motivariResult.error;
+      if (cereriResult.error) throw cereriResult.error;
+
+      // ✅ Calculează ore_personale_folosite pentru fiecare elev
+      const eleviCuOre = elevi.map((elev) => {
+        const motivariElev = motivariResult.data.filter((m) => m.elev_id === elev.id);
+        const cereriElev = cereriResult.data.filter((c) => c.elev_id === elev.id);
+
+        return {
+          ...elev,
+          ore_personale_folosite: calculateOrePersonale(motivariElev, cereriElev),
+        };
+      });
+
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           data: {
-            elevi: elevi,
+            elevi: eleviCuOre, // ✅ Trimite cu ore calculate
           },
         }),
       };
     }
 
-    // Acțiune: get-all-data - returnează motivări și cereri
+    // Acțiune: get-all-data
     if (action === 'get-all-data') {
       const [motivariResult, cereriResult] = await Promise.all([
         supabase
@@ -70,7 +91,6 @@ exports.handler = async (event, context) => {
       if (motivariResult.error) throw motivariResult.error;
       if (cereriResult.error) throw cereriResult.error;
 
-      // Combină datele cu informațiile elevilor
       const formattedMotivari = motivariResult.data.map((motivare) => {
         const elev = elevi.find((e) => e.id === motivare.elev_id);
         return {
@@ -97,33 +117,6 @@ exports.handler = async (event, context) => {
             motivari: formattedMotivari,
             cereri: formattedCereri,
           },
-        }),
-      };
-    } else {
-      // Compatibilitate cu versiunea veche - doar motivări
-      const { data: motivari, error: motivariError } = await supabase
-        .from('motivari')
-        .select('*')
-        .in('elev_id', eleviIds)
-        .order('created_at', { ascending: false });
-
-      if (motivariError) throw motivariError;
-
-      // Combină datele
-      const formattedData = motivari.map((motivare) => {
-        const elev = elevi.find((e) => e.id === motivare.elev_id);
-        return {
-          ...motivare,
-          elev_nume: elev.nume,
-          elev_prenume: elev.prenume,
-        };
-      });
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          data: formattedData,
         }),
       };
     }
